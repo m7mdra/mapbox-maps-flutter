@@ -1,3 +1,12 @@
+## 0.4.4
+### Android
+* Bump platform Maps SDK to 10.13.0.
+
+### iOS
+* Bump platform Maps SDK to 10.13.1.
+* Fix 2d puck bearing not displayed.
+* Fix pinchZoomEnabled gesture setting not applied.
+
 ## 0.4.3
 ### Common
 * Fix multiple memory leaks. 

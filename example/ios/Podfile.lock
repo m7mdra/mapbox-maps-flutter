@@ -2,15 +2,15 @@ PODS:
   - Flutter (1.0.0)
   - integration_test (0.0.1):
     - Flutter
-  - mapbox_maps_flutter (0.4.3):
+  - mapbox_maps_flutter (0.4.4):
     - Flutter
-    - MapboxMaps
-  - MapboxCommon (23.3.1)
-  - MapboxCoreMaps (10.11.1):
-    - MapboxCommon (~> 23.3)
-  - MapboxMaps (10.11.0):
-    - MapboxCommon (= 23.3.1)
-    - MapboxCoreMaps (= 10.11.1)
+    - MapboxMaps (~> 10.13.1)
+  - MapboxCommon (23.5.0)
+  - MapboxCoreMaps (10.13.1):
+    - MapboxCommon (~> 23.5)
+  - MapboxMaps (10.13.1):
+    - MapboxCommon (= 23.5.0)
+    - MapboxCoreMaps (= 10.13.1)
     - MapboxMobileEvents (= 1.0.10)
     - Turf (~> 2.0)
   - MapboxMobileEvents (1.0.10)
@@ -22,13 +22,13 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - mapbox_maps_flutter (from `.symlinks/plugins/mapbox_maps_flutter/ios`)
-  - MapboxMaps (from `https://github.com/m7mdra/mapbox-maps-ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
 
 SPEC REPOS:
   trunk:
     - MapboxCommon
     - MapboxCoreMaps
+    - MapboxMaps
     - MapboxMobileEvents
     - Turf
 
@@ -39,27 +39,20 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/integration_test/ios"
   mapbox_maps_flutter:
     :path: ".symlinks/plugins/mapbox_maps_flutter/ios"
-  MapboxMaps:
-    :git: https://github.com/m7mdra/mapbox-maps-ios
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
-
-CHECKOUT OPTIONS:
-  MapboxMaps:
-    :commit: 41bf3e10c50dbc015129efc51b00f4b4e966bec5
-    :git: https://github.com/m7mdra/mapbox-maps-ios
 
 SPEC CHECKSUMS:
   Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
   integration_test: a1e7d09bd98eca2fc37aefd79d4f41ad37bdbbe5
-  mapbox_maps_flutter: ce54be31983e3eb91b65c8007aad8b523a355d80
-  MapboxCommon: 235bb9c27a8985d982e17f216795b1f7ab526782
-  MapboxCoreMaps: 4075a9e415b9b3ab6229d09623fef5f791826a5b
-  MapboxMaps: a5ad1977764731f97ba04bb7815b6b367e56039c
+  mapbox_maps_flutter: b7750303639682268cc7f487bfc6f474a456acab
+  MapboxCommon: fdf7fd31c90b7b607cd9c63e37797f023c01d860
+  MapboxCoreMaps: 24270c7c6b8cb71819fc2f3c549db9620ee4d019
+  MapboxMaps: cb76511b98d3b95c74b0771ed105bc69f30ace6b
   MapboxMobileEvents: de50b3a4de180dd129c326e09cd12c8adaaa46d6
   permission_handler_apple: 44366e37eaf29454a1e7b1b7d736c2cceaeb17ce
   Turf: 469ce2c3d22e5e8e4818d5a3b254699a5c89efa4
 
-PODFILE CHECKSUM: 1c69f3829a6e304487e01f74271a5d4ec96d9f51
+PODFILE CHECKSUM: 04c8a50f0eb98e8e64bc4237a0712e89ba6c14b8
 
 COCOAPODS: 1.11.3
