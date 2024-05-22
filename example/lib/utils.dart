@@ -6,7 +6,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:turf/helpers.dart';
 import 'package:turf/polyline.dart';
 
 Point createRandomPoint() {
@@ -69,7 +68,7 @@ Position createRandomPositionAround(Position myPosition) {
 extension AnnotationCreation on PointAnnotationManager {
   addAnnotation(Uint8List imageData, Point position, {String textField = ""}) {
     return create(PointAnnotationOptions(
-        geometry: position.toJson(),
+        geometry: position,
         textField: textField,
         textOffset: [0.0, -2.0],
         textColor: Colors.red.value,
@@ -96,7 +95,7 @@ extension PuckPosition on StyleManager {
 extension PolylineCreation on PolylineAnnotationManager {
   addAnnotation(List<Position> coordinates) {
     return PolylineAnnotationOptions(
-        geometry: LineString(coordinates: coordinates).toJson(),
+        geometry: LineString(coordinates: coordinates),
         lineColor: Colors.red.value,
         lineWidth: 2);
   }

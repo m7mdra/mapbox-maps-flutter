@@ -4,15 +4,17 @@ part of mapbox_maps_flutter;
 /// A filled circle.
 class CircleLayer extends Layer {
   CircleLayer({
-    required id,
-    visibility,
-    minZoom,
-    maxZoom,
+    required String id,
+    Visibility? visibility,
+    double? minZoom,
+    double? maxZoom,
+    String? slot,
     required this.sourceId,
     this.sourceLayer,
     this.circleSortKey,
     this.circleBlur,
     this.circleColor,
+    this.circleEmissiveStrength,
     this.circleOpacity,
     this.circlePitchAlignment,
     this.circlePitchScale,
@@ -23,7 +25,11 @@ class CircleLayer extends Layer {
     this.circleTranslate,
     this.circleTranslateAnchor,
   }) : super(
-            id: id, visibility: visibility, maxZoom: maxZoom, minZoom: minZoom);
+            id: id,
+            visibility: visibility,
+            maxZoom: maxZoom,
+            minZoom: minZoom,
+            slot: slot);
 
   @override
   String getType() => "circle";
@@ -42,6 +48,9 @@ class CircleLayer extends Layer {
 
   /// The fill color of the circle.
   int? circleColor;
+
+  /// Controls the intensity of light emitted on the source features.
+  double? circleEmissiveStrength;
 
   /// The opacity at which the circle will be drawn.
   double? circleOpacity;
@@ -75,7 +84,7 @@ class CircleLayer extends Layer {
     var layout = {};
     if (visibility != null) {
       layout["visibility"] =
-          visibility?.toString().split('.').last.toLowerCase();
+          visibility?.name.toLowerCase().replaceAll("_", "-");
     }
     if (circleSortKey != null) {
       layout["circle-sort-key"] = circleSortKey;
@@ -87,16 +96,19 @@ class CircleLayer extends Layer {
     if (circleColor != null) {
       paint["circle-color"] = circleColor?.toRGBA();
     }
+    if (circleEmissiveStrength != null) {
+      paint["circle-emissive-strength"] = circleEmissiveStrength;
+    }
     if (circleOpacity != null) {
       paint["circle-opacity"] = circleOpacity;
     }
     if (circlePitchAlignment != null) {
       paint["circle-pitch-alignment"] =
-          circlePitchAlignment?.toString().split('.').last.toLowerCase();
+          circlePitchAlignment?.name.toLowerCase().replaceAll("_", "-");
     }
     if (circlePitchScale != null) {
       paint["circle-pitch-scale"] =
-          circlePitchScale?.toString().split('.').last.toLowerCase();
+          circlePitchScale?.name.toLowerCase().replaceAll("_", "-");
     }
     if (circleRadius != null) {
       paint["circle-radius"] = circleRadius;
@@ -115,7 +127,7 @@ class CircleLayer extends Layer {
     }
     if (circleTranslateAnchor != null) {
       paint["circle-translate-anchor"] =
-          circleTranslateAnchor?.toString().split('.').last.toLowerCase();
+          circleTranslateAnchor?.name.toLowerCase().replaceAll("_", "-");
     }
     var properties = {
       "id": id,
@@ -132,6 +144,9 @@ class CircleLayer extends Layer {
     }
     if (maxZoom != null) {
       properties["maxzoom"] = maxZoom!;
+    }
+    if (slot != null) {
+      properties["slot"] = slot!;
     }
 
     return json.encode(properties);
@@ -151,13 +166,12 @@ class CircleLayer extends Layer {
       sourceLayer: map["source-layer"],
       minZoom: map["minzoom"]?.toDouble(),
       maxZoom: map["maxzoom"]?.toDouble(),
+      slot: map["slot"],
       visibility: map["layout"]["visibility"] == null
           ? Visibility.VISIBLE
-          : Visibility.values.firstWhere((e) => e
-              .toString()
-              .split('.')
-              .last
+          : Visibility.values.firstWhere((e) => e.name
               .toLowerCase()
+              .replaceAll("_", "-")
               .contains(map["layout"]["visibility"])),
       circleSortKey: map["layout"]["circle-sort-key"] is num?
           ? (map["layout"]["circle-sort-key"] as num?)?.toDouble()
@@ -166,24 +180,23 @@ class CircleLayer extends Layer {
           ? (map["paint"]["circle-blur"] as num?)?.toDouble()
           : null,
       circleColor: (map["paint"]["circle-color"] as List?)?.toRGBAInt(),
+      circleEmissiveStrength: map["paint"]["circle-emissive-strength"] is num?
+          ? (map["paint"]["circle-emissive-strength"] as num?)?.toDouble()
+          : null,
       circleOpacity: map["paint"]["circle-opacity"] is num?
           ? (map["paint"]["circle-opacity"] as num?)?.toDouble()
           : null,
       circlePitchAlignment: map["paint"]["circle-pitch-alignment"] == null
           ? null
-          : CirclePitchAlignment.values.firstWhere((e) => e
-              .toString()
-              .split('.')
-              .last
+          : CirclePitchAlignment.values.firstWhere((e) => e.name
               .toLowerCase()
+              .replaceAll("_", "-")
               .contains(map["paint"]["circle-pitch-alignment"])),
       circlePitchScale: map["paint"]["circle-pitch-scale"] == null
           ? null
-          : CirclePitchScale.values.firstWhere((e) => e
-              .toString()
-              .split('.')
-              .last
+          : CirclePitchScale.values.firstWhere((e) => e.name
               .toLowerCase()
+              .replaceAll("_", "-")
               .contains(map["paint"]["circle-pitch-scale"])),
       circleRadius: map["paint"]["circle-radius"] is num?
           ? (map["paint"]["circle-radius"] as num?)?.toDouble()
@@ -201,11 +214,9 @@ class CircleLayer extends Layer {
           .toList(),
       circleTranslateAnchor: map["paint"]["circle-translate-anchor"] == null
           ? null
-          : CircleTranslateAnchor.values.firstWhere((e) => e
-              .toString()
-              .split('.')
-              .last
+          : CircleTranslateAnchor.values.firstWhere((e) => e.name
               .toLowerCase()
+              .replaceAll("_", "-")
               .contains(map["paint"]["circle-translate-anchor"])),
     );
   }

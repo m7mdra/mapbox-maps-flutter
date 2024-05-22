@@ -5,11 +5,6 @@ ENV["SPACESHIP_SKIP_2FA_UPGRADE"] = "1"
 
 platform :ios do
 
-  lane :update_code_signing do
-    setup_circle_ci
-    sync_code_signing(type: "development")
-  end
-
   lane :build_examples_tests do
     setup_circle_ci
     sync_code_signing(type: "development")
@@ -36,7 +31,7 @@ platform :ios do
       xcconfig: "example/ios/Flutter/Release.xcconfig",
       derived_data_path: "example/build/output",
       configuration: "Release",
-      xcargs: "ENABLE_TESTABILITY=YES SWIFT_TREAT_WARNINGS_AS_ERRORS=NO COMPILER_INDEX_STORE_ENABLE=NO",
+      xcargs: "SWIFT_TREAT_WARNINGS_AS_ERRORS=NO COMPILER_INDEX_STORE_ENABLE=NO",
       skip_detect_devices: true,          # Required
       build_for_testing: true,            # Required
       sdk: 'iphoneos',                    # Required

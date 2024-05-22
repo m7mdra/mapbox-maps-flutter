@@ -2,24 +2,29 @@
 package com.mapbox.maps.mapbox_maps.mapping
 
 import android.content.Context
-import com.mapbox.maps.pigeons.FLTSettings
+import com.mapbox.maps.mapbox_maps.pigeons.*
+import com.mapbox.maps.mapbox_maps.toDevicePixels
+import com.mapbox.maps.mapbox_maps.toLogicalPixels
 import com.mapbox.maps.plugin.logo.generated.LogoSettingsInterface
 
-fun LogoSettingsInterface.applyFromFLT(settings: FLTSettings.LogoSettings, context: Context) {
-  settings.position?.let { position = it.toPosition() }
-  settings.marginLeft?.let { marginLeft = it.toFloat() }
-  settings.marginTop?.let { marginTop = it.toFloat() }
-  settings.marginRight?.let { marginRight = it.toFloat() }
-  settings.marginBottom?.let { marginBottom = it.toFloat() }
+fun LogoSettingsInterface.applyFromFLT(settings: LogoSettings, context: Context) {
+  this.updateSettings {
+    settings.enabled?.let { this.enabled = it }
+    settings.position?.let { this.position = it.toPosition() }
+    settings.marginLeft?.let { this.marginLeft = it.toDevicePixels(context) }
+    settings.marginTop?.let { this.marginTop = it.toDevicePixels(context) }
+    settings.marginRight?.let { this.marginRight = it.toDevicePixels(context) }
+    settings.marginBottom?.let { this.marginBottom = it.toDevicePixels(context) }
+  }
 }
 
-fun LogoSettingsInterface.toFLT() = FLTSettings.LogoSettings.Builder().let { settings ->
-  settings.setPosition(position.toOrnamentPosition())
-  settings.setMarginLeft(marginLeft.toDouble())
-  settings.setMarginTop(marginTop.toDouble())
-  settings.setMarginRight(marginRight.toDouble())
-  settings.setMarginBottom(marginBottom.toDouble())
-  settings.build()
-}
+fun LogoSettingsInterface.toFLT(context: Context) = LogoSettings(
+  enabled = enabled,
+  position = position.toOrnamentPosition(),
+  marginLeft = marginLeft.toLogicalPixels(context),
+  marginTop = marginTop.toLogicalPixels(context),
+  marginRight = marginRight.toLogicalPixels(context),
+  marginBottom = marginBottom.toLogicalPixels(context),
+)
 
 // End of generated file.

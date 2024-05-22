@@ -4,10 +4,11 @@ part of mapbox_maps_flutter;
 /// Location Indicator layer.
 class LocationIndicatorLayer extends Layer {
   LocationIndicatorLayer({
-    required id,
-    visibility,
-    minZoom,
-    maxZoom,
+    required String id,
+    Visibility? visibility,
+    double? minZoom,
+    double? maxZoom,
+    String? slot,
     this.bearingImage,
     this.shadowImage,
     this.topImage,
@@ -20,11 +21,16 @@ class LocationIndicatorLayer extends Layer {
     this.emphasisCircleRadius,
     this.imagePitchDisplacement,
     this.location,
+    this.locationIndicatorOpacity,
     this.perspectiveCompensation,
     this.shadowImageSize,
     this.topImageSize,
   }) : super(
-            id: id, visibility: visibility, maxZoom: maxZoom, minZoom: minZoom);
+            id: id,
+            visibility: visibility,
+            maxZoom: maxZoom,
+            minZoom: minZoom,
+            slot: slot);
 
   @override
   String getType() => "location-indicator";
@@ -65,6 +71,9 @@ class LocationIndicatorLayer extends Layer {
   /// An array of [latitude, longitude, altitude] position of the location indicator.
   List<double?>? location;
 
+  /// The opacity of the entire location indicator layer.
+  double? locationIndicatorOpacity;
+
   /// The amount of the perspective compensation, between 0 and 1. A value of 1 produces a location indicator of constant width across the screen. A value of 0 makes it scale naturally according to the viewing projection.
   double? perspectiveCompensation;
 
@@ -79,7 +88,7 @@ class LocationIndicatorLayer extends Layer {
     var layout = {};
     if (visibility != null) {
       layout["visibility"] =
-          visibility?.toString().split('.').last.toLowerCase();
+          visibility?.name.toLowerCase().replaceAll("_", "-");
     }
     if (bearingImage != null) {
       layout["bearing-image"] = bearingImage;
@@ -119,6 +128,9 @@ class LocationIndicatorLayer extends Layer {
     if (location != null) {
       paint["location"] = location;
     }
+    if (locationIndicatorOpacity != null) {
+      paint["location-indicator-opacity"] = locationIndicatorOpacity;
+    }
     if (perspectiveCompensation != null) {
       paint["perspective-compensation"] = perspectiveCompensation;
     }
@@ -140,6 +152,9 @@ class LocationIndicatorLayer extends Layer {
     if (maxZoom != null) {
       properties["maxzoom"] = maxZoom!;
     }
+    if (slot != null) {
+      properties["slot"] = slot!;
+    }
 
     return json.encode(properties);
   }
@@ -156,17 +171,22 @@ class LocationIndicatorLayer extends Layer {
       id: map["id"],
       minZoom: map["minzoom"]?.toDouble(),
       maxZoom: map["maxzoom"]?.toDouble(),
+      slot: map["slot"],
       visibility: map["layout"]["visibility"] == null
           ? Visibility.VISIBLE
-          : Visibility.values.firstWhere((e) => e
-              .toString()
-              .split('.')
-              .last
+          : Visibility.values.firstWhere((e) => e.name
               .toLowerCase()
+              .replaceAll("_", "-")
               .contains(map["layout"]["visibility"])),
-      bearingImage: map["layout"]["bearing-image"],
-      shadowImage: map["layout"]["shadow-image"],
-      topImage: map["layout"]["top-image"],
+      bearingImage: map["layout"]["bearing-image"] is String?
+          ? map["layout"]["bearing-image"] as String?
+          : null,
+      shadowImage: map["layout"]["shadow-image"] is String?
+          ? map["layout"]["shadow-image"] as String?
+          : null,
+      topImage: map["layout"]["top-image"] is String?
+          ? map["layout"]["top-image"] as String?
+          : null,
       accuracyRadius: map["paint"]["accuracy-radius"] is num?
           ? (map["paint"]["accuracy-radius"] as num?)?.toDouble()
           : null,
@@ -191,6 +211,10 @@ class LocationIndicatorLayer extends Layer {
       location: (map["paint"]["location"] as List?)
           ?.map<double?>((e) => e.toDouble())
           .toList(),
+      locationIndicatorOpacity:
+          map["paint"]["location-indicator-opacity"] is num?
+              ? (map["paint"]["location-indicator-opacity"] as num?)?.toDouble()
+              : null,
       perspectiveCompensation: map["paint"]["perspective-compensation"] is num?
           ? (map["paint"]["perspective-compensation"] as num?)?.toDouble()
           : null,

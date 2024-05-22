@@ -10,8 +10,11 @@ import 'package:mapbox_maps_example/image_source.dart';
 import 'package:mapbox_maps_example/map_interface.dart';
 import 'package:mapbox_maps_example/polygon_annotations.dart';
 import 'package:mapbox_maps_example/polyline_annotations.dart';
+import 'package:mapbox_maps_example/snapshotter.dart';
+import 'package:mapbox_maps_example/traffic-route-line.dart';
 import 'package:mapbox_maps_example/tile_json.dart';
 import 'package:mapbox_maps_example/vector_tile_source.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'full_map.dart';
 import 'location.dart';
@@ -41,6 +44,8 @@ final List<ExamplePage> _allPages = <ExamplePage>[
   GesturesPage(),
   OrnamentsPage(),
   AnimatedRoutePage(),
+  SnapshotterPage(),
+  TrafficRouteLinePage(),
 ];
 
 class MapsDemo extends StatelessWidget {
@@ -108,5 +113,7 @@ class MapsDemo extends StatelessWidget {
 }
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MapboxOptions.setAccessToken(MapsDemo.ACCESS_TOKEN);
   runApp(MaterialApp(home: MapsDemo()));
 }

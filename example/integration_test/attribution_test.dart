@@ -15,6 +15,7 @@ void main() {
     final mapboxMap = await mapFuture;
     final attribution = mapboxMap.attribution;
     var settings = AttributionSettings(
+      enabled: false,
       iconColor: Colors.blue.value,
       position: OrnamentPosition.TOP_RIGHT,
       marginLeft: 1,
@@ -25,13 +26,14 @@ void main() {
     );
     await attribution.updateSettings(settings);
     var updatedSettings = await attribution.getSettings();
+    expect(updatedSettings.enabled, isFalse);
     expect(updatedSettings.position, OrnamentPosition.TOP_RIGHT);
+    expect(updatedSettings.iconColor, Colors.blue.value);
     if (Platform.isIOS) {
+      // on iOS margins for the current position are preserved
       expect(updatedSettings.marginTop, 2);
       expect(updatedSettings.marginRight, 3);
     } else {
-      // FIXME colors are decoded incorrectly for some reason
-      // expect(updatedSettings.iconColor, Colors.blue.value);
       expect(updatedSettings.marginLeft, 1);
       expect(updatedSettings.marginTop, 2);
       expect(updatedSettings.marginRight, 3);
