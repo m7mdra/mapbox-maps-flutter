@@ -4,6 +4,8 @@ import 'package:mapbox_maps_example/animation.dart';
 import 'package:mapbox_maps_example/camera.dart';
 import 'package:mapbox_maps_example/circle_annotations.dart';
 import 'package:mapbox_maps_example/cluster.dart';
+import 'package:mapbox_maps_example/offline_map.dart';
+import 'package:mapbox_maps_example/model_layer.dart';
 import 'package:mapbox_maps_example/ornaments.dart';
 import 'package:mapbox_maps_example/geojson_line.dart';
 import 'package:mapbox_maps_example/image_source.dart';
@@ -46,6 +48,8 @@ final List<ExamplePage> _allPages = <ExamplePage>[
   AnimatedRoutePage(),
   SnapshotterPage(),
   TrafficRouteLinePage(),
+  OfflineMapPage(),
+  ModelLayerPage(),
 ];
 
 class MapsDemo extends StatelessWidget {

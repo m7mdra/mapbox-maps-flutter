@@ -182,6 +182,13 @@ abstract class Layer {
   /// The visibility of the layer.
   Visibility? visibility;
 
+  /// The visibility of the layer.
+  List<Object>? visibilityExpression;
+
+  /// An expression specifying conditions on source features.
+  /// Only features that match the filter are displayed.
+  List<Object>? filter;
+
   /// The minimum zoom level for the layer. At zoom levels less than the minzoom, the layer will be hidden.
   ///
   /// Range:
@@ -202,14 +209,16 @@ abstract class Layer {
   /// Get the type of current layer as a String.
   String getType();
 
-  String _encode();
+  Future<String> _encode();
 
   Layer(
-      {required this.id,
-      this.visibility,
-      this.maxZoom,
-      this.minZoom,
-      this.slot});
+      {required String this.id,
+      Visibility? this.visibility,
+      List<Object>? this.visibilityExpression,
+      List<Object>? this.filter,
+      double? this.maxZoom,
+      double? this.minZoom,
+      String? this.slot});
 }
 
 /// Super class for all different types of sources.
@@ -232,20 +241,20 @@ abstract class Source {
 /// Extension for StyleManager to add/update/get layers from the current style.
 extension StyleLayer on StyleManager {
   /// Add a layer the the current style.
-  Future<void> addLayer(Layer layer) {
-    var encode = layer._encode();
+  Future<void> addLayer(Layer layer) async {
+    var encode = await layer._encode();
     return addStyleLayer(encode, null);
   }
 
   /// Add a layer to the current style in a specific position.
-  Future<void> addLayerAt(Layer layer, LayerPosition position) {
-    var encode = layer._encode();
+  Future<void> addLayerAt(Layer layer, LayerPosition position) async {
+    var encode = await layer._encode();
     return addStyleLayer(encode, position);
   }
 
   /// Update an existing layer in the style.
-  Future<void> updateLayer(Layer layer) {
-    var encode = layer._encode();
+  Future<void> updateLayer(Layer layer) async {
+    var encode = await layer._encode();
     return setStyleLayerProperties(layer.id, encode);
   }
 
@@ -358,16 +367,74 @@ extension StyleColorInt on int {
 }
 
 extension StyleColorList on List {
-  /// Convert the color from a list `[rgba, $R, $G, $B, $A]` to int.
+  /// Convert the color from a color expression to int.
+  /// `rgb`, `rgba`, `hsl` and `hsla` formats are supported.
+  /// Example input: `[rgba, $R, $G, $B, $A]`.
   int toRGBAInt() {
-    final alpha = this.last is num ? ((this.last as num) * 255).toInt() : null;
+    switch ((firstOrNull, length)) {
+      case ("rgb", 4):
+        return _decodeRGBColor().value;
+      case ("rgba", 5):
+        return _decodeRGBAColor().value;
+      case ("hsl", 4):
+        return _decodeHSLColor().value;
+      case ("hsla", 5):
+        return _decodeHSLAColor().value;
+      default:
+        return 0;
+    }
+  }
+
+  Color _decodeHSLColor() {
+    final hue = this[1] is num ? (this[1] as num).toDouble() : null;
+    final saturation = this[2] is num ? (this[2] as num).toDouble() : null;
+    final lightness = this[3] is num ? (this[3] as num).toDouble() : null;
+
+    if (hue != null && saturation != null && lightness != null) {
+      return HSLColor.fromAHSL(1, hue, saturation, lightness).toColor();
+    } else {
+      return Colors.transparent;
+    }
+  }
+
+  Color _decodeHSLAColor() {
+    final hue = this[1] is num ? (this[1] as num).toDouble() : null;
+    final saturation = this[2] is num ? (this[2] as num).toDouble() : null;
+    final lightness = this[3] is num ? (this[3] as num).toDouble() : null;
+    final alpha = this[4] is num ? ((this[4] as num) * 255).toDouble() : null;
+
+    if (hue != null &&
+        saturation != null &&
+        lightness != null &&
+        alpha != null) {
+      return HSLColor.fromAHSL(alpha, hue, saturation, lightness).toColor();
+    } else {
+      return Colors.transparent;
+    }
+  }
+
+  Color _decodeRGBColor() {
     final red = this[1] is num ? (this[1] as num).toInt() : null;
     final green = this[2] is num ? (this[2] as num).toInt() : null;
     final blue = this[3] is num ? (this[3] as num).toInt() : null;
-    if (alpha != null && red != null && green != null && blue != null) {
-      return Color.fromARGB(alpha, red, green, blue).value;
+
+    if (red != null && green != null && blue != null) {
+      return Color.fromARGB(1, red, green, blue);
     } else {
-      return 0;
+      return Colors.transparent;
+    }
+  }
+
+  Color _decodeRGBAColor() {
+    final red = this[1] is num ? (this[1] as num).toInt() : null;
+    final green = this[2] is num ? (this[2] as num).toInt() : null;
+    final blue = this[3] is num ? (this[3] as num).toInt() : null;
+    final alpha = this[4] is num ? ((this[4] as num) * 255).toInt() : null;
+
+    if (alpha != null && red != null && green != null && blue != null) {
+      return Color.fromARGB(alpha, red, green, blue);
+    } else {
+      return Colors.transparent;
     }
   }
 }

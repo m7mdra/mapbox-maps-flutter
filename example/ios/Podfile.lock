@@ -2,17 +2,20 @@ PODS:
   - Flutter (1.0.0)
   - integration_test (0.0.1):
     - Flutter
-  - mapbox_maps_flutter (2.0.0-rc.1):
+  - mapbox_maps_flutter (2.1.0):
     - Flutter
-    - MapboxMaps (~> 11.4.0-rc.2)
+    - MapboxMaps (~> 11.5.1)
     - Turf (= 2.8.0)
-  - MapboxCommon (24.4.0-rc.2)
-  - MapboxCoreMaps (11.4.0-rc.2):
-    - MapboxCommon (~> 24.4.0-rc)
-  - MapboxMaps (11.4.0-rc.2):
-    - MapboxCommon (= 24.4.0-rc.2)
-    - MapboxCoreMaps (= 11.4.0-rc.2)
+  - MapboxCommon (24.5.0)
+  - MapboxCoreMaps (11.5.1):
+    - MapboxCommon (~> 24.5)
+  - MapboxMaps (11.5.1):
+    - MapboxCommon (= 24.5.0)
+    - MapboxCoreMaps (= 11.5.1)
     - Turf (= 2.8.0)
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
   - permission_handler_apple (9.1.1):
     - Flutter
   - Turf (2.8.0)
@@ -21,6 +24,7 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - mapbox_maps_flutter (from `.symlinks/plugins/mapbox_maps_flutter/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
 
 SPEC REPOS:
@@ -37,16 +41,19 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/integration_test/ios"
   mapbox_maps_flutter:
     :path: ".symlinks/plugins/mapbox_maps_flutter/ios"
+  path_provider_foundation:
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
 
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   integration_test: ce0a3ffa1de96d1a89ca0ac26fca7ea18a749ef4
-  mapbox_maps_flutter: 677b6094f040e319151db7496f87e0176506f3cc
-  MapboxCommon: 382ac2426f53bbe673ddea9398671e8eee2d4057
-  MapboxCoreMaps: b60c8a4d7dd2378620b1f6175a7d8e9214d250a4
-  MapboxMaps: b881158fb698cd589bab38ca78113f1480393370
+  mapbox_maps_flutter: c7e9ddad4b3e7e68397fc0f8643ff408913dc44f
+  MapboxCommon: c69a04a1accd77650372c96d8978a15ed1d95186
+  MapboxCoreMaps: 9d8833b738b94d63ee842722641e8cfdc1fa1191
+  MapboxMaps: 24a52620178b5390373489c083d4a3acd319c1d3
+  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   permission_handler_apple: e76247795d700c14ea09e3a2d8855d41ee80a2e6
   Turf: aa2ede4298009639d10db36aba1a7ebaad072a5e
 
