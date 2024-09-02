@@ -1,10 +1,10 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_example/main.dart';
 import 'package:mapbox_maps_example/page.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:turf/turf.dart';
 
 class ModelPage extends ExamplePage {
   ModelPage() : super(Icon(Icons.format_shapes), '3d Model');
@@ -37,7 +37,11 @@ class _ModelState extends State<Model> {
       children: [
         MapWidget(
           onMapCreated: (mapController) {
+            log("onMapCreated ${mapController}");
             this._mapController = mapController;
+          },
+          onStyleDataLoadedListener: (style) {
+            log("onStyleDataLoadedListener ${style}");
           },
           key: ValueKey("mapWidget"),
           resourceOptions: ResourceOptions(accessToken: MapsDemo.ACCESS_TOKEN),
@@ -51,7 +55,7 @@ class _ModelState extends State<Model> {
             // _mapController.style.getLayer("source1").then((value) => print(value));
           },
         ),
-        Row(
+        OverflowBar(
           children: [
             ElevatedButton(onPressed: _addModel, child: Text('Add model')),
             ElevatedButton(
@@ -147,8 +151,8 @@ class _ModelState extends State<Model> {
           sourceId: sourceId,
           modelType: ModelType.COMMON_3D,
           modelId: modelId,
-          modelTranslation: [1.2,1.5,1.5],
-          modelRotation: [1.0,1.0,1.0],
+          modelTranslation: [1.2, 1.5, 1.5],
+          modelRotation: [1.0, 1.0, 1.0],
           modelScale: [1.0, 1.0, 1.0]);
       await _mapController.style.addLayer(modelLayer);
     } catch (error) {

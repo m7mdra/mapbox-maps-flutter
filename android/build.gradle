@@ -39,7 +39,9 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 31
+    namespace 'com.mapbox.maps.mapbox_maps'
+
+    compileSdk 34
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
@@ -49,8 +51,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 }
 
@@ -66,7 +68,6 @@ dependencies {
     implementation ("com.mapbox.maps:android:10.13.0"){
         exclude group: 'com.mapbox.plugin', module: 'maps-lifecycle'
     }
-
-    implementation "androidx.annotation:annotation:1.1.0"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.3.0"
+    implementation "androidx.annotation:annotation:1.8.2"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.4"
 }
