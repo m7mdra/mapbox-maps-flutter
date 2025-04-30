@@ -63,11 +63,11 @@ class CircleLayer extends Layer {
   /// Sorts features in ascending order based on this value. Features with a higher sort key will appear above features with a lower sort key.
   List<Object>? circleSortKeyExpression;
 
-  /// Amount to blur the circle. 1 blurs the circle such that only the centerpoint is full opacity.
+  /// Amount to blur the circle. 1 blurs the circle such that only the centerpoint is full opacity. Setting a negative value renders the blur as an inner glow effect.
   /// Default value: 0.
   double? circleBlur;
 
-  /// Amount to blur the circle. 1 blurs the circle such that only the centerpoint is full opacity.
+  /// Amount to blur the circle. 1 blurs the circle such that only the centerpoint is full opacity. Setting a negative value renders the blur as an inner glow effect.
   /// Default value: 0.
   List<Object>? circleBlurExpression;
 
@@ -80,11 +80,11 @@ class CircleLayer extends Layer {
   List<Object>? circleColorExpression;
 
   /// Controls the intensity of light emitted on the source features.
-  /// Default value: 0. Minimum value: 0.
+  /// Default value: 0. Minimum value: 0. The unit of circleEmissiveStrength is in intensity.
   double? circleEmissiveStrength;
 
   /// Controls the intensity of light emitted on the source features.
-  /// Default value: 0. Minimum value: 0.
+  /// Default value: 0. Minimum value: 0. The unit of circleEmissiveStrength is in intensity.
   List<Object>? circleEmissiveStrengthExpression;
 
   /// The opacity at which the circle will be drawn.
@@ -112,11 +112,11 @@ class CircleLayer extends Layer {
   List<Object>? circlePitchScaleExpression;
 
   /// Circle radius.
-  /// Default value: 5. Minimum value: 0.
+  /// Default value: 5. Minimum value: 0. The unit of circleRadius is in pixels.
   double? circleRadius;
 
   /// Circle radius.
-  /// Default value: 5. Minimum value: 0.
+  /// Default value: 5. Minimum value: 0. The unit of circleRadius is in pixels.
   List<Object>? circleRadiusExpression;
 
   /// The stroke color of the circle.
@@ -136,19 +136,19 @@ class CircleLayer extends Layer {
   List<Object>? circleStrokeOpacityExpression;
 
   /// The width of the circle's stroke. Strokes are placed outside of the `circle-radius`.
-  /// Default value: 0. Minimum value: 0.
+  /// Default value: 0. Minimum value: 0. The unit of circleStrokeWidth is in pixels.
   double? circleStrokeWidth;
 
   /// The width of the circle's stroke. Strokes are placed outside of the `circle-radius`.
-  /// Default value: 0. Minimum value: 0.
+  /// Default value: 0. Minimum value: 0. The unit of circleStrokeWidth is in pixels.
   List<Object>? circleStrokeWidthExpression;
 
   /// The geometry's offset. Values are [x, y] where negatives indicate left and up, respectively.
-  /// Default value: [0,0].
+  /// Default value: [0,0]. The unit of circleTranslate is in pixels.
   List<double?>? circleTranslate;
 
   /// The geometry's offset. Values are [x, y] where negatives indicate left and up, respectively.
-  /// Default value: [0,0].
+  /// Default value: [0,0]. The unit of circleTranslate is in pixels.
   List<Object>? circleTranslateExpression;
 
   /// Controls the frame of reference for `circle-translate`.

@@ -1,8 +1,11 @@
 // This file is generated.
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:mapbox_maps_example/empty_map_widget.dart' as app;
+import '../empty_map_widget.dart' as app;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -32,9 +35,25 @@ void main() {
     final mapboxMap = await mapFuture;
     final manager = await mapboxMap.annotations.createCircleAnnotationManager();
 
+    await manager.setCircleSortKey(1.0);
+    var circleSortKey = await manager.getCircleSortKey();
+    expect(1.0, circleSortKey);
+
+    await manager.setCircleBlur(1.0);
+    var circleBlur = await manager.getCircleBlur();
+    expect(1.0, circleBlur);
+
+    await manager.setCircleColor(Colors.red.value);
+    var circleColor = await manager.getCircleColor();
+    expect(Colors.red.value, circleColor);
+
     await manager.setCircleEmissiveStrength(1.0);
     var circleEmissiveStrength = await manager.getCircleEmissiveStrength();
     expect(1.0, circleEmissiveStrength);
+
+    await manager.setCircleOpacity(1.0);
+    var circleOpacity = await manager.getCircleOpacity();
+    expect(1.0, circleOpacity);
 
     await manager.setCirclePitchAlignment(CirclePitchAlignment.MAP);
     var circlePitchAlignment = await manager.getCirclePitchAlignment();
@@ -44,6 +63,22 @@ void main() {
     var circlePitchScale = await manager.getCirclePitchScale();
     expect(CirclePitchScale.MAP, circlePitchScale);
 
+    await manager.setCircleRadius(1.0);
+    var circleRadius = await manager.getCircleRadius();
+    expect(1.0, circleRadius);
+
+    await manager.setCircleStrokeColor(Colors.red.value);
+    var circleStrokeColor = await manager.getCircleStrokeColor();
+    expect(Colors.red.value, circleStrokeColor);
+
+    await manager.setCircleStrokeOpacity(1.0);
+    var circleStrokeOpacity = await manager.getCircleStrokeOpacity();
+    expect(1.0, circleStrokeOpacity);
+
+    await manager.setCircleStrokeWidth(1.0);
+    var circleStrokeWidth = await manager.getCircleStrokeWidth();
+    expect(1.0, circleStrokeWidth);
+
     await manager.setCircleTranslate([0.0, 1.0]);
     var circleTranslate = await manager.getCircleTranslate();
     expect([0.0, 1.0], circleTranslate);
@@ -51,6 +86,65 @@ void main() {
     await manager.setCircleTranslateAnchor(CircleTranslateAnchor.MAP);
     var circleTranslateAnchor = await manager.getCircleTranslateAnchor();
     expect(CircleTranslateAnchor.MAP, circleTranslateAnchor);
+  });
+
+  testWidgets('annotation drag events', (WidgetTester tester) async {
+    final mapFuture = app.main();
+    await tester.pumpAndSettle();
+
+    final mapboxMap = await mapFuture;
+    final manager = await mapboxMap.annotations.createCircleAnnotationManager();
+
+    final geometry = Point(coordinates: Position(0, 0));
+
+    final createdAnnotation = await manager.create(CircleAnnotationOptions(
+      geometry: geometry,
+      isDraggable: true,
+    ));
+
+    // Mock drag events
+    final eventChannel = EventChannel(
+        "dev.flutter.pigeon.mapbox_maps_flutter.AnnotationInteractions._annotationDragEvents.0/${manager.id}",
+        pigeonMethodCodec);
+    IntegrationTestWidgetsFlutterBinding.instance.defaultBinaryMessenger
+        .setMockStreamHandler(eventChannel,
+            MockStreamHandler.inline(onListen: (arguments, events) {
+      events.success(CircleAnnotationInteractionContext(
+        annotation: createdAnnotation,
+        gestureState: GestureState.started,
+      ));
+      events.success(CircleAnnotationInteractionContext(
+        annotation: createdAnnotation,
+        gestureState: GestureState.changed,
+      ));
+      events.success(CircleAnnotationInteractionContext(
+        annotation: createdAnnotation,
+        gestureState: GestureState.ended,
+      ));
+      events.endOfStream();
+    }));
+
+    final onDragBegin = Completer();
+    final onDragChanged = Completer();
+    final onDragEnd = Completer();
+
+    manager.dragEvents(
+      onBegin: (annotation) {
+        expect(annotation.id, equals(createdAnnotation.id));
+        onDragBegin.complete();
+      },
+      onChanged: (annotation) {
+        expect(annotation.id, equals(createdAnnotation.id));
+        onDragChanged.complete();
+      },
+      onEnd: (annotation) {
+        expect(annotation.id, equals(createdAnnotation.id));
+        onDragEnd.complete();
+      },
+    );
+
+    await Future.wait(
+        [onDragBegin.future, onDragChanged.future, onDragEnd.future]);
   });
 }
 // End of generated file.

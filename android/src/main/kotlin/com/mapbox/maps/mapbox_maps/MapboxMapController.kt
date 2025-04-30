@@ -7,7 +7,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.ViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
 import com.mapbox.bindgen.Value
 import com.mapbox.common.SettingsServiceFactory
 import com.mapbox.common.SettingsServiceStorageType
@@ -15,6 +15,7 @@ import com.mapbox.maps.MapInitOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.MapboxMap
 import com.mapbox.maps.mapbox_maps.annotation.AnnotationController
+import com.mapbox.maps.mapbox_maps.http.CustomHttpServiceInterceptor
 import com.mapbox.maps.mapbox_maps.pigeons.AttributionSettingsInterface
 import com.mapbox.maps.mapbox_maps.pigeons.CompassSettingsInterface
 import com.mapbox.maps.mapbox_maps.pigeons.GesturesSettingsInterface
@@ -26,6 +27,10 @@ import com.mapbox.maps.mapbox_maps.pigeons._AnimationManager
 import com.mapbox.maps.mapbox_maps.pigeons._CameraManager
 import com.mapbox.maps.mapbox_maps.pigeons._LocationComponentSettingsInterface
 import com.mapbox.maps.mapbox_maps.pigeons._MapInterface
+import com.mapbox.maps.mapbox_maps.pigeons._PerformanceStatisticsApi
+import com.mapbox.maps.mapbox_maps.pigeons._ViewportMessenger
+import com.mapbox.maps.plugin.animation.camera
+import com.mapbox.maps.plugin.viewport.viewport
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -38,16 +43,20 @@ class MapboxMapController(
   mapInitOptions: MapInitOptions,
   private val lifecycleProvider: MapboxMapsPlugin.LifecycleProvider,
   messenger: BinaryMessenger,
-  channelSuffix: Int,
+  channelSuffix: Long,
   pluginVersion: String,
-  eventTypes: List<Int>
+  eventTypes: List<Long>
 ) : PlatformView,
   DefaultLifecycleObserver,
   MethodChannel.MethodCallHandler {
 
   private var mapView: MapView? = null
   private var mapboxMap: MapboxMap? = null
+
   private val methodChannel: MethodChannel
+  private val messenger: BinaryMessenger
+  private val channelSuffix: String
+
   private val styleController: StyleController
   private val cameraController: CameraController
   private val projectionController: MapProjectionController
@@ -56,12 +65,14 @@ class MapboxMapController(
   private val annotationController: AnnotationController
   private val locationComponentController: LocationComponentController
   private val gestureController: GestureController
+  private val interactionsController: InteractionsController
   private val logoController: LogoController
   private val attributionController: AttributionController
   private val scaleBarController: ScaleBarController
   private val compassController: CompassController
+  private val viewportController: ViewportController
+  private val performanceStatisticsController: PerformanceStatisticsController
 
-  private val proxyBinaryMessenger = ProxyBinaryMessenger(messenger, "$channelSuffix")
   private val eventHandler: MapboxEventHandler
 
   /*
@@ -81,9 +92,8 @@ class MapboxMapController(
       parentLifecycle.addObserver(this)
     }
 
-    override fun getLifecycle(): Lifecycle {
-      return lifecycleRegistry
-    }
+    override val lifecycle: Lifecycle
+      get() = lifecycleRegistry
 
     override fun onCreate(owner: LifecycleOwner) {
       lifecycleRegistry.currentState = Lifecycle.State.CREATED
@@ -123,40 +133,47 @@ class MapboxMapController(
   private var lifecycleHelper: LifecycleHelper? = null
 
   init {
+    this.messenger = messenger
+    this.channelSuffix = channelSuffix.toString()
+
     val mapView = MapView(context, mapInitOptions)
     val mapboxMap = mapView.mapboxMap
     this.mapView = mapView
     this.mapboxMap = mapboxMap
-    eventHandler = MapboxEventHandler(mapboxMap.styleManager, proxyBinaryMessenger, eventTypes)
+    eventHandler = MapboxEventHandler(mapboxMap.styleManager, messenger, eventTypes, this.channelSuffix)
     styleController = StyleController(context, mapboxMap)
     cameraController = CameraController(mapboxMap, context)
     projectionController = MapProjectionController(mapboxMap)
     mapInterfaceController = MapInterfaceController(mapboxMap, mapView, context)
     animationController = AnimationController(mapboxMap, context)
-    annotationController = AnnotationController(mapView)
+    annotationController = AnnotationController(mapView, messenger, this.channelSuffix)
     locationComponentController = LocationComponentController(mapView, context)
     gestureController = GestureController(mapView, context)
+    interactionsController = InteractionsController(mapboxMap, context)
     logoController = LogoController(mapView)
     attributionController = AttributionController(mapView)
     scaleBarController = ScaleBarController(mapView)
     compassController = CompassController(mapView)
-
+    viewportController = ViewportController(mapView.viewport, mapView.camera, context, mapboxMap)
+    performanceStatisticsController = PerformanceStatisticsController(mapboxMap, this.messenger, this.channelSuffix)
     changeUserAgent(pluginVersion)
 
-    StyleManager.setUp(proxyBinaryMessenger, styleController)
-    _CameraManager.setUp(proxyBinaryMessenger, cameraController)
-    Projection.setUp(proxyBinaryMessenger, projectionController)
-    _MapInterface.setUp(proxyBinaryMessenger, mapInterfaceController)
-    _AnimationManager.setUp(proxyBinaryMessenger, animationController)
-    annotationController.setup(proxyBinaryMessenger)
-    _LocationComponentSettingsInterface.setUp(proxyBinaryMessenger, locationComponentController)
-    LogoSettingsInterface.setUp(proxyBinaryMessenger, logoController)
-    GesturesSettingsInterface.setUp(proxyBinaryMessenger, gestureController)
-    AttributionSettingsInterface.setUp(proxyBinaryMessenger, attributionController)
-    ScaleBarSettingsInterface.setUp(proxyBinaryMessenger, scaleBarController)
-    CompassSettingsInterface.setUp(proxyBinaryMessenger, compassController)
+    StyleManager.setUp(messenger, styleController, this.channelSuffix)
+    _CameraManager.setUp(messenger, cameraController, this.channelSuffix)
+    Projection.setUp(messenger, projectionController, this.channelSuffix)
+    _MapInterface.setUp(messenger, mapInterfaceController, this.channelSuffix)
+    _AnimationManager.setUp(messenger, animationController, this.channelSuffix)
+    annotationController.setup()
+    _LocationComponentSettingsInterface.setUp(messenger, locationComponentController, this.channelSuffix)
+    LogoSettingsInterface.setUp(messenger, logoController, this.channelSuffix)
+    GesturesSettingsInterface.setUp(messenger, gestureController, this.channelSuffix)
+    AttributionSettingsInterface.setUp(messenger, attributionController, this.channelSuffix)
+    ScaleBarSettingsInterface.setUp(messenger, scaleBarController, this.channelSuffix)
+    CompassSettingsInterface.setUp(messenger, compassController, this.channelSuffix)
+    _ViewportMessenger.setUp(messenger, viewportController, this.channelSuffix)
+    _PerformanceStatisticsApi.setUp(messenger, performanceStatisticsController, this.channelSuffix)
 
-    methodChannel = MethodChannel(proxyBinaryMessenger, "plugins.flutter.io")
+    methodChannel = MethodChannel(messenger, "plugins.flutter.io.$channelSuffix")
     methodChannel.setMethodCallHandler(this)
   }
 
@@ -173,14 +190,14 @@ class MapboxMapController(
     }
     lifecycleHelper = LifecycleHelper(lifecycleProvider.getLifecycle()!!, shouldDestroyOnDestroy)
 
-    mapView?.let { ViewTreeLifecycleOwner.set(it, lifecycleHelper) }
+    mapView?.setViewTreeLifecycleOwner(lifecycleHelper)
   }
 
   override fun onFlutterViewDetached() {
     super.onFlutterViewDetached()
     lifecycleHelper?.dispose()
     lifecycleHelper = null
-    ViewTreeLifecycleOwner.set(mapView!!, null)
+    mapView?.setViewTreeLifecycleOwner(null)
   }
 
   override fun dispose() {
@@ -189,21 +206,25 @@ class MapboxMapController(
     }
     lifecycleHelper?.dispose()
     lifecycleHelper = null
+    mapView?.setViewTreeLifecycleOwner(null)
     mapView = null
     mapboxMap = null
     methodChannel.setMethodCallHandler(null)
-    StyleManager.setUp(proxyBinaryMessenger, null)
-    _CameraManager.setUp(proxyBinaryMessenger, null)
-    Projection.setUp(proxyBinaryMessenger, null)
-    _MapInterface.setUp(proxyBinaryMessenger, null)
-    _AnimationManager.setUp(proxyBinaryMessenger, null)
-    annotationController.dispose(proxyBinaryMessenger)
-    _LocationComponentSettingsInterface.setUp(proxyBinaryMessenger, null)
-    LogoSettingsInterface.setUp(proxyBinaryMessenger, null)
-    GesturesSettingsInterface.setUp(proxyBinaryMessenger, null)
-    CompassSettingsInterface.setUp(proxyBinaryMessenger, null)
-    ScaleBarSettingsInterface.setUp(proxyBinaryMessenger, null)
-    AttributionSettingsInterface.setUp(proxyBinaryMessenger, null)
+
+    StyleManager.setUp(messenger, null, channelSuffix)
+    _CameraManager.setUp(messenger, null, channelSuffix)
+    Projection.setUp(messenger, null, channelSuffix)
+    _MapInterface.setUp(messenger, null, channelSuffix)
+    _AnimationManager.setUp(messenger, null, channelSuffix)
+    annotationController.dispose()
+    _LocationComponentSettingsInterface.setUp(messenger, null, channelSuffix)
+    LogoSettingsInterface.setUp(messenger, null, channelSuffix)
+    GesturesSettingsInterface.setUp(messenger, null, channelSuffix)
+    CompassSettingsInterface.setUp(messenger, null, channelSuffix)
+    ScaleBarSettingsInterface.setUp(messenger, null, channelSuffix)
+    AttributionSettingsInterface.setUp(messenger, null, channelSuffix)
+    _ViewportMessenger.setUp(messenger, null, channelSuffix)
+    _PerformanceStatisticsApi.setUp(messenger, null, channelSuffix)
   }
 
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -215,11 +236,19 @@ class MapboxMapController(
         annotationController.handleRemoveManager(call, result)
       }
       "gesture#add_listeners" -> {
-        gestureController.addListeners(proxyBinaryMessenger)
+        gestureController.addListeners(messenger, channelSuffix)
         result.success(null)
       }
       "gesture#remove_listeners" -> {
         gestureController.removeListeners()
+        result.success(null)
+      }
+      "interactions#add_interaction" -> {
+        interactionsController.addInteraction(messenger, channelSuffix, call)
+        result.success(null)
+      }
+      "interactions#remove_interaction" -> {
+        interactionsController.removeInteraction(call)
         result.success(null)
       }
       "platform#releaseMethodChannels" -> {
@@ -239,6 +268,22 @@ class MapboxMapController(
           }.toByteArray()
 
           result.success(byteArray)
+        }
+      }
+      "mapView#submitViewSizeHint" -> {
+        result.success(null) // no-op on this platform
+      }
+      "map#setCustomHeaders" -> {
+        try {
+          val headers = call.argument<Map<String, String>>("headers")
+          headers?.let {
+            CustomHttpServiceInterceptor.getInstance().setCustomHeaders(headers)
+            result.success(null)
+          } ?: run {
+            result.error("INVALID_ARGUMENTS", "Headers cannot be null", null)
+          }
+        } catch (e: Exception) {
+          result.error("HEADER_ERROR", e.message, null)
         }
       }
       else -> {

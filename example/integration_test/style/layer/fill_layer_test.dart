@@ -1,11 +1,10 @@
 // This file is generated.
 import 'dart:convert';
 import 'package:flutter/material.dart' hide Visibility;
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:mapbox_maps_example/empty_map_widget.dart' as app;
+import '../../empty_map_widget.dart' as app;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +32,7 @@ void main() {
       minZoom: 1.0,
       maxZoom: 20.0,
       slot: LayerSlot.BOTTOM,
+      fillElevationReference: FillElevationReference.NONE,
       fillSortKey: 1.0,
       fillAntialias: true,
       fillColor: Colors.red.value,
@@ -42,6 +42,7 @@ void main() {
       fillPattern: "abc",
       fillTranslate: [0.0, 1.0],
       fillTranslateAnchor: FillTranslateAnchor.MAP,
+      fillZOffset: 1.0,
     ));
     var layer = await mapboxMap.style.getLayer('layer') as FillLayer;
     expect('source', layer.sourceId);
@@ -49,6 +50,7 @@ void main() {
     expect(layer.maxZoom, 20);
     expect(layer.slot, LayerSlot.BOTTOM);
     expect(layer.visibility, Visibility.NONE);
+    expect(layer.fillElevationReference, FillElevationReference.NONE);
     expect(layer.fillSortKey, 1.0);
     expect(layer.fillAntialias, true);
     expect(layer.fillColor, Colors.red.value);
@@ -58,6 +60,7 @@ void main() {
     expect(layer.fillPattern, "abc");
     expect(layer.fillTranslate, [0.0, 1.0]);
     expect(layer.fillTranslateAnchor, FillTranslateAnchor.MAP);
+    expect(layer.fillZOffset, 1.0);
   });
 
   testWidgets('Add FillLayer with expressions', (WidgetTester tester) async {
@@ -88,6 +91,7 @@ void main() {
       minZoom: 1.0,
       maxZoom: 20.0,
       slot: LayerSlot.BOTTOM,
+      fillElevationReferenceExpression: ['string', 'none'],
       fillSortKeyExpression: ['number', 1.0],
       fillAntialiasExpression: ['==', true, true],
       fillColorExpression: ['rgba', 255, 0, 0, 1],
@@ -100,6 +104,7 @@ void main() {
         [0.0, 1.0]
       ],
       fillTranslateAnchorExpression: ['string', 'map'],
+      fillZOffsetExpression: ['number', 1.0],
     ));
     var layer = await mapboxMap.style.getLayer('layer') as FillLayer;
     expect('source', layer.sourceId);
@@ -112,6 +117,7 @@ void main() {
       ["get", "type"],
       "Feature"
     ]);
+    expect(layer.fillElevationReference, FillElevationReference.NONE);
     expect(layer.fillSortKey, 1.0);
     expect(layer.fillAntialias, true);
     expect(layer.fillColorExpression, ['rgba', 255, 0, 0, 1]);
@@ -121,6 +127,7 @@ void main() {
     expect(layer.fillPatternExpression, ['image', "abc"]);
     expect(layer.fillTranslate, [0.0, 1.0]);
     expect(layer.fillTranslateAnchor, FillTranslateAnchor.MAP);
+    expect(layer.fillZOffset, 1.0);
   });
 }
 // End of generated file.

@@ -1,11 +1,10 @@
 // This file is generated.
 import 'dart:convert';
 import 'package:flutter/material.dart' hide Visibility;
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:mapbox_maps_example/empty_map_widget.dart' as app;
+import '../../empty_map_widget.dart' as app;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -38,9 +37,11 @@ void main() {
       iconRotate: 1.0,
       iconRotationAlignment: IconRotationAlignment.MAP,
       iconSize: 1.0,
+      iconSizeScaleRange: [0.0, 1.0],
       iconTextFit: IconTextFit.NONE,
       iconTextFitPadding: [0.0, 1.0, 2.0, 3.0],
       symbolAvoidEdges: true,
+      symbolElevationReference: SymbolElevationReference.SEA,
       symbolPlacement: SymbolPlacement.POINT,
       symbolSortKey: 1.0,
       symbolSpacing: 1.0,
@@ -65,6 +66,7 @@ void main() {
       textRotate: 1.0,
       textRotationAlignment: TextRotationAlignment.MAP,
       textSize: 1.0,
+      textSizeScaleRange: [0.0, 1.0],
       textTransform: TextTransform.NONE,
       textVariableAnchor: ["center", "left"],
       textWritingMode: ["horizontal", "vertical"],
@@ -79,6 +81,7 @@ void main() {
       iconOpacity: 1.0,
       iconTranslate: [0.0, 1.0],
       iconTranslateAnchor: IconTranslateAnchor.MAP,
+      symbolZOffset: 1.0,
       textColor: Colors.red.value,
       textEmissiveStrength: 1.0,
       textHaloBlur: 1.0,
@@ -107,9 +110,11 @@ void main() {
     expect(layer.iconRotate, 1.0);
     expect(layer.iconRotationAlignment, IconRotationAlignment.MAP);
     expect(layer.iconSize, 1.0);
+    expect(layer.iconSizeScaleRange, [0.0, 1.0]);
     expect(layer.iconTextFit, IconTextFit.NONE);
     expect(layer.iconTextFitPadding, [0.0, 1.0, 2.0, 3.0]);
     expect(layer.symbolAvoidEdges, true);
+    expect(layer.symbolElevationReference, SymbolElevationReference.SEA);
     expect(layer.symbolPlacement, SymbolPlacement.POINT);
     expect(layer.symbolSortKey, 1.0);
     expect(layer.symbolSpacing, 1.0);
@@ -134,6 +139,7 @@ void main() {
     expect(layer.textRotate, 1.0);
     expect(layer.textRotationAlignment, TextRotationAlignment.MAP);
     expect(layer.textSize, 1.0);
+    expect(layer.textSizeScaleRange, [0.0, 1.0]);
     expect(layer.textTransform, TextTransform.NONE);
     expect(layer.textVariableAnchor, ["center", "left"]);
     expect(layer.textWritingMode, ["horizontal", "vertical"]);
@@ -148,6 +154,7 @@ void main() {
     expect(layer.iconOpacity, 1.0);
     expect(layer.iconTranslate, [0.0, 1.0]);
     expect(layer.iconTranslateAnchor, IconTranslateAnchor.MAP);
+    expect(layer.symbolZOffset, 1.0);
     expect(layer.textColor, Colors.red.value);
     expect(layer.textEmissiveStrength, 1.0);
     expect(layer.textHaloBlur, 1.0);
@@ -195,12 +202,17 @@ void main() {
       iconRotateExpression: ['number', 1.0],
       iconRotationAlignmentExpression: ['string', 'map'],
       iconSizeExpression: ['number', 1.0],
+      iconSizeScaleRangeExpression: [
+        'literal',
+        [0.0, 1.0]
+      ],
       iconTextFitExpression: ['string', 'none'],
       iconTextFitPaddingExpression: [
         'literal',
         [0.0, 1.0, 2.0, 3.0]
       ],
       symbolAvoidEdgesExpression: ['==', true, true],
+      symbolElevationReferenceExpression: ['string', 'sea'],
       symbolPlacementExpression: ['string', 'point'],
       symbolSortKeyExpression: ['number', 1.0],
       symbolSpacingExpression: ['number', 1.0],
@@ -231,6 +243,10 @@ void main() {
       textRotateExpression: ['number', 1.0],
       textRotationAlignmentExpression: ['string', 'map'],
       textSizeExpression: ['number', 1.0],
+      textSizeScaleRangeExpression: [
+        'literal',
+        [0.0, 1.0]
+      ],
       textTransformExpression: ['string', 'none'],
       textVariableAnchorExpression: [
         'literal',
@@ -254,6 +270,7 @@ void main() {
         [0.0, 1.0]
       ],
       iconTranslateAnchorExpression: ['string', 'map'],
+      symbolZOffsetExpression: ['number', 1.0],
       textColorExpression: ['rgba', 255, 0, 0, 1],
       textEmissiveStrengthExpression: ['number', 1.0],
       textHaloBlurExpression: ['number', 1.0],
@@ -290,9 +307,11 @@ void main() {
     expect(layer.iconRotate, 1.0);
     expect(layer.iconRotationAlignment, IconRotationAlignment.MAP);
     expect(layer.iconSize, 1.0);
+    expect(layer.iconSizeScaleRange, [0.0, 1.0]);
     expect(layer.iconTextFit, IconTextFit.NONE);
     expect(layer.iconTextFitPadding, [0.0, 1.0, 2.0, 3.0]);
     expect(layer.symbolAvoidEdges, true);
+    expect(layer.symbolElevationReference, SymbolElevationReference.SEA);
     expect(layer.symbolPlacement, SymbolPlacement.POINT);
     expect(layer.symbolSortKey, 1.0);
     expect(layer.symbolSpacing, 1.0);
@@ -317,6 +336,7 @@ void main() {
     expect(layer.textRotate, 1.0);
     expect(layer.textRotationAlignment, TextRotationAlignment.MAP);
     expect(layer.textSize, 1.0);
+    expect(layer.textSizeScaleRange, [0.0, 1.0]);
     expect(layer.textTransform, TextTransform.NONE);
     expect(layer.textVariableAnchor, ["center", "left"]);
     expect(layer.textWritingMode, ["horizontal", "vertical"]);
@@ -331,6 +351,7 @@ void main() {
     expect(layer.iconOpacity, 1.0);
     expect(layer.iconTranslate, [0.0, 1.0]);
     expect(layer.iconTranslateAnchor, IconTranslateAnchor.MAP);
+    expect(layer.symbolZOffset, 1.0);
     expect(layer.textColorExpression, ['rgba', 255, 0, 0, 1]);
     expect(layer.textEmissiveStrength, 1.0);
     expect(layer.textHaloBlur, 1.0);

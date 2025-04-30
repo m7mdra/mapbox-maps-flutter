@@ -16,7 +16,7 @@ final class _MapEvents {
   OnStyleImageUnusedListener? _onStyleImageUnusedListener;
   OnResourceRequestListener? _onResourceRequestListener;
   late final MethodChannel _channel;
-  List<_MapEvent> _subscribedEventTypes = [];
+  List<_MapEvent> subscribedEventTypes = [];
 
   List<_MapEvent> get eventTypes {
     final listenersMap = {
@@ -40,16 +40,21 @@ final class _MapEvents {
     return listenersMap.values.toList();
   }
 
-  _MapEvents({BinaryMessenger? binaryMessenger}) {
-    _channel = MethodChannel('com.mapbox.maps.flutter.map_events',
-        const StandardMethodCodec(), binaryMessenger);
+  _MapEvents(
+      {BinaryMessenger? binaryMessenger, required String channelSuffix}) {
+    final pigeon_channelSuffix =
+        channelSuffix.length > 0 ? '.${channelSuffix}' : '';
+    _channel = MethodChannel(
+        'com.mapbox.maps.flutter.map_events${pigeon_channelSuffix}',
+        const StandardMethodCodec(),
+        binaryMessenger);
     _channel.setMethodCallHandler(_handleMethodCall);
   }
 
   void updateSubscriptions() {
     final newEventTypes = eventTypes;
 
-    if (listEquals(newEventTypes, _subscribedEventTypes)) {
+    if (listEquals(newEventTypes, subscribedEventTypes)) {
       return;
     }
 
@@ -57,7 +62,7 @@ final class _MapEvents {
     _channel.invokeMethod(
         "subscribeToEvents", newEventTypes.map((e) => e.index).toList());
 
-    _subscribedEventTypes = newEventTypes;
+    subscribedEventTypes = newEventTypes;
   }
 
   void dispose() {

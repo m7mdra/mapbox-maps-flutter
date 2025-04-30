@@ -1,22 +1,31 @@
 package com.mapbox.maps.mapbox_maps
 
+import android.annotation.SuppressLint
 import android.content.Context
 import com.google.gson.Gson
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.Point
 import com.mapbox.maps.MapView
+import com.mapbox.maps.MapboxDelicateApi
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.MapboxMap
+import com.mapbox.maps.PlatformEventInfo
+import com.mapbox.maps.PlatformEventType
 import com.mapbox.maps.TileCacheBudget
 import com.mapbox.maps.extension.observable.eventdata.MapLoadingErrorEventData
+import com.mapbox.maps.extension.style.expressions.generated.Expression
+import com.mapbox.maps.interactions.FeatureStateKey
 import com.mapbox.maps.mapbox_maps.pigeons.CanonicalTileID
 import com.mapbox.maps.mapbox_maps.pigeons.ConstrainMode
 import com.mapbox.maps.mapbox_maps.pigeons.FeatureExtensionValue
+import com.mapbox.maps.mapbox_maps.pigeons.FeaturesetDescriptor
+import com.mapbox.maps.mapbox_maps.pigeons.FeaturesetFeature
+import com.mapbox.maps.mapbox_maps.pigeons.FeaturesetFeatureId
 import com.mapbox.maps.mapbox_maps.pigeons.MapDebugOptions
 import com.mapbox.maps.mapbox_maps.pigeons.MapOptions
 import com.mapbox.maps.mapbox_maps.pigeons.NorthOrientation
 import com.mapbox.maps.mapbox_maps.pigeons.QueriedRenderedFeature
 import com.mapbox.maps.mapbox_maps.pigeons.QueriedSourceFeature
-import com.mapbox.maps.mapbox_maps.pigeons.RenderedQueryGeometry
 import com.mapbox.maps.mapbox_maps.pigeons.RenderedQueryOptions
 import com.mapbox.maps.mapbox_maps.pigeons.Size
 import com.mapbox.maps.mapbox_maps.pigeons.SourceQueryOptions
@@ -25,14 +34,26 @@ import com.mapbox.maps.mapbox_maps.pigeons.TileCacheBudgetInTiles
 import com.mapbox.maps.mapbox_maps.pigeons.TileCoverOptions
 import com.mapbox.maps.mapbox_maps.pigeons.ViewportMode
 import com.mapbox.maps.mapbox_maps.pigeons._MapInterface
-import com.mapbox.maps.mapbox_maps.pigeons._MapWidgetDebugOptionsBox
+import com.mapbox.maps.mapbox_maps.pigeons._MapWidgetDebugOptions
+import com.mapbox.maps.mapbox_maps.pigeons._RenderedQueryGeometry
 import com.mapbox.maps.plugin.delegates.listeners.OnMapLoadErrorListener
+import org.json.JSONObject
 
 class MapInterfaceController(
   private val mapboxMap: MapboxMap,
   private val mapView: MapView,
   private val context: Context
 ) : _MapInterface {
+
+  override fun setSnapshotLegacyMode(enabled: Boolean, callback: (Result<Unit>) -> Unit) {
+    mapView.setSnapshotLegacyMode(enabled)
+    callback(Result.success(Unit))
+  }
+
+  override fun styleGlyphURL(): String = mapboxMap.getStyleGlyphURL()
+
+  override fun setStyleGlyphURL(glyphURL: String) = mapboxMap.setStyleGlyphURL(glyphURL)
+
   override fun loadStyleURI(styleURI: String, callback: (Result<Unit>) -> Unit) {
     mapboxMap.loadStyleUri(
       styleURI,
@@ -117,14 +138,14 @@ class MapInterfaceController(
     return mapboxMap.getMapOptions().toFLTMapOptions(context)
   }
 
-  override fun getDebugOptions(): List<_MapWidgetDebugOptionsBox?> {
+  override fun getDebugOptions(): List<_MapWidgetDebugOptions> {
     return mapView.debugOptions.mapNotNull { nativeOption ->
-      nativeOption.toFLTDebugOptions()?.let { _MapWidgetDebugOptionsBox(it) }
+      nativeOption.toFLTDebugOptions()
     }
   }
 
-  override fun setDebugOptions(debugOptions: List<_MapWidgetDebugOptionsBox>) {
-    mapView.debugOptions = debugOptions.map { it.option.toMapViewDebugOptions() }.toSet()
+  override fun setDebugOptions(debugOptions: List<_MapWidgetDebugOptions>) {
+    mapView.debugOptions = debugOptions.map { it.toMapViewDebugOptions() }.toSet()
   }
 
   override fun getDebug(): List<MapDebugOptions> {
@@ -136,7 +157,7 @@ class MapInterfaceController(
   }
 
   override fun queryRenderedFeatures(
-    geometry: RenderedQueryGeometry,
+    geometry: _RenderedQueryGeometry,
     options: RenderedQueryOptions,
     callback: (Result<List<QueriedRenderedFeature?>>) -> Unit
   ) {
@@ -153,6 +174,30 @@ class MapInterfaceController(
           )
         )
       }
+    }
+  }
+
+  @OptIn(MapboxExperimental::class)
+  override fun queryRenderedFeaturesForFeatureset(
+    featureset: FeaturesetDescriptor,
+    geometry: _RenderedQueryGeometry?,
+    filter: String?,
+    callback: (Result<List<FeaturesetFeature>>) -> Unit
+  ) {
+    featureset.toTypedFeaturesetDescriptor()?.let { typedFeaturesetDescriptor ->
+      mapboxMap.queryRenderedFeatures(
+        typedFeaturesetDescriptor,
+        geometry?.toRenderedQueryGeometry(context),
+        filter?.let { Expression.fromRaw(filter) }
+      ) {
+        callback(Result.success(it.map { feature -> feature.toFLTFeaturesetFeature() }.toMutableList()))
+      }
+    } ?: {
+      callback(
+        Result.failure(
+          Throwable("Error querying rendered features for featureset: {featureId: ${featureset.featuresetId}, importId: ${featureset.importId}, layerId: ${featureset.layerId}}")
+        )
+      )
     }
   }
 
@@ -243,6 +288,42 @@ class MapInterfaceController(
     }
   }
 
+  @OptIn(MapboxExperimental::class, MapboxDelicateApi::class)
+  override fun setFeatureStateForFeaturesetDescriptor(
+    featureset: FeaturesetDescriptor,
+    featureId: FeaturesetFeatureId,
+    state: Map<String, Any?>,
+    callback: (Result<Unit>) -> Unit
+  ) {
+    featureset.toTypedFeaturesetDescriptor()?.let { typedFeaturesetDescriptor ->
+      mapboxMap.setFeatureState(
+        typedFeaturesetDescriptor,
+        featureId.toFeaturesetFeatureId(),
+        state.toFeatureState()
+      ) { callback(Result.success(Unit)) }
+    } ?: {
+      callback(Result.failure(Throwable("Error setting feature state for feature $featureId from featureset {featuresetId: ${featureset.featuresetId}, importId: ${featureset.importId}, layerId: ${featureset.layerId}.")))
+    }
+  }
+
+  @OptIn(MapboxExperimental::class, MapboxDelicateApi::class)
+  override fun setFeatureStateForFeaturesetFeature(
+    feature: FeaturesetFeature,
+    state: Map<String, Any?>,
+    callback: (Result<Unit>) -> Unit
+  ) {
+    feature.id?.let {
+      setFeatureStateForFeaturesetDescriptor(
+        feature.featureset,
+        it,
+        state,
+        callback
+      )
+    } ?: {
+      callback(Result.failure(Throwable("Invalid feature id for the requested feature: $feature")))
+    }
+  }
+
   override fun getFeatureState(
     sourceId: String,
     sourceLayerId: String?,
@@ -260,6 +341,40 @@ class MapInterfaceController(
     }
   }
 
+  @OptIn(MapboxExperimental::class, MapboxDelicateApi::class)
+  override fun getFeatureStateForFeaturesetDescriptor(
+    featureset: FeaturesetDescriptor,
+    featureId: FeaturesetFeatureId,
+    callback: (Result<Map<String, Any?>>) -> Unit
+  ) {
+    featureset.toTypedFeaturesetDescriptor()?.also { featuresetDescriptor ->
+      mapboxMap.getFeatureState(
+        featuresetDescriptor,
+        featureId.toFeaturesetFeatureId()
+      ) {
+        callback(Result.success(JSONObject(it.asJsonString()).toFilteredMap()))
+      }
+    } ?: {
+      callback(Result.failure(Throwable("Error getting feature state for feature $featureId from featureset: {featureId: ${featureset.featuresetId}, importId: ${featureset.importId}, layerId: ${featureset.layerId}}.")))
+    }
+  }
+
+  @OptIn(MapboxExperimental::class, MapboxDelicateApi::class)
+  override fun getFeatureStateForFeaturesetFeature(
+    feature: FeaturesetFeature,
+    callback: (Result<Map<String, Any?>>) -> Unit
+  ) {
+    feature.id?.let {
+      getFeatureStateForFeaturesetDescriptor(
+        feature.featureset,
+        it,
+        callback
+      )
+    } ?: {
+      callback(Result.failure(Throwable("Invalid feature id for the requested feature: $feature")))
+    }
+  }
+
   override fun removeFeatureState(
     sourceId: String,
     sourceLayerId: String?,
@@ -269,10 +384,72 @@ class MapInterfaceController(
   ) {
     mapboxMap.removeFeatureState(sourceId, sourceLayerId, featureId, stateKey) {
       if (it.isError) {
-        callback(Result.failure(Throwable(it.error)))
+        callback(Result.failure(Throwable("Cannot remove feature state for the requested feature: $featureId")))
       } else {
         callback(Result.success(Unit))
       }
+    }
+  }
+
+  @OptIn(MapboxExperimental::class, MapboxDelicateApi::class)
+  override fun removeFeatureStateForFeaturesetDescriptor(
+    featureset: FeaturesetDescriptor,
+    featureId: FeaturesetFeatureId,
+    stateKey: String?,
+    callback: (Result<Unit>) -> Unit
+  ) {
+    featureset.toTypedFeaturesetDescriptor()?.let { typedFeaturesetDescriptor ->
+      mapboxMap.removeFeatureState(
+        typedFeaturesetDescriptor,
+        featureId.toFeaturesetFeatureId(),
+        stateKey?.let { FeatureStateKey.create(it) }
+      ) {
+        if (it.isError) {
+          callback(Result.failure(Throwable("Cannot remove feature state for the requested featureset: {featureId: ${featureset.featuresetId}, importId: ${featureset.importId}, layerId: ${featureset.layerId}} and featureID: $featureId.")))
+        } else {
+          callback(Result.success(Unit))
+        }
+      }
+    } ?: {
+      callback(Result.failure(Throwable("Failed to convert requested featureset: {featureId: ${featureset.featuresetId}, importId: ${featureset.importId}, layerId: ${featureset.layerId}}.")))
+    }
+  }
+
+  @OptIn(MapboxExperimental::class, MapboxDelicateApi::class)
+  override fun removeFeatureStateForFeaturesetFeature(
+    feature: FeaturesetFeature,
+    stateKey: String?,
+    callback: (Result<Unit>) -> Unit
+  ) {
+    feature.id?.let {
+      removeFeatureStateForFeaturesetDescriptor(
+        feature.featureset,
+        it,
+        stateKey,
+        callback
+      )
+    } ?: {
+      callback(Result.failure(Throwable("Invalid feature id for the requested feature: $feature")))
+    }
+  }
+
+  @OptIn(MapboxExperimental::class)
+  override fun resetFeatureStatesForFeatureset(
+    featureset: FeaturesetDescriptor,
+    callback: (Result<Unit>) -> Unit
+  ) {
+    featureset.toTypedFeaturesetDescriptor()?.let { typedFeaturesetDescriptor ->
+      mapboxMap.resetFeatureStates(
+        typedFeaturesetDescriptor
+      ) {
+        if (it.isError) {
+          callback(Result.failure(Throwable("Error resetting feature states for the requested featureset: {featureId: ${featureset.featuresetId}, importId: ${featureset.importId}, layerId: ${featureset.layerId}}.")))
+        } else {
+          callback(Result.success(Unit))
+        }
+      }
+    } ?: {
+      callback(Result.failure(Throwable("Failed to convert requested featureset: {featureId: ${featureset.featuresetId}, importId: ${featureset.importId}, layerId: ${featureset.layerId}}.")))
     }
   }
 
@@ -299,5 +476,24 @@ class MapInterfaceController(
 
   override fun setGestureInProgress(inProgress: Boolean) {
     mapboxMap.setGestureInProgress(inProgress)
+  }
+
+  @OptIn(MapboxExperimental::class)
+  @SuppressLint("RestrictedApi")
+  override fun dispatch(gesture: String, screenCoordinate: com.mapbox.maps.mapbox_maps.pigeons.ScreenCoordinate) {
+    val eventType: PlatformEventType = when (gesture) {
+      "click" -> PlatformEventType.CLICK
+      "longClick" -> PlatformEventType.LONG_CLICK
+      "drag" -> PlatformEventType.DRAG
+      "dragBegin" -> PlatformEventType.DRAG_BEGIN
+      "dragEnd" -> PlatformEventType.DRAG_END
+      else -> throw IllegalArgumentException("Invalid gesture type: $gesture")
+    }
+    mapboxMap.dispatch(
+      platformEventInfo = PlatformEventInfo(
+        eventType,
+        screenCoordinate.toScreenCoordinate(context)
+      )
+    )
   }
 }

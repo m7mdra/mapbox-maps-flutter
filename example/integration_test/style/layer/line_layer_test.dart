@@ -1,11 +1,10 @@
 // This file is generated.
 import 'dart:convert';
 import 'package:flutter/material.dart' hide Visibility;
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:mapbox_maps_example/empty_map_widget.dart' as app;
+import '../../empty_map_widget.dart' as app;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -28,10 +27,13 @@ void main() {
       maxZoom: 20.0,
       slot: LayerSlot.BOTTOM,
       lineCap: LineCap.BUTT,
+      lineCrossSlope: 1.0,
+      lineElevationReference: LineElevationReference.NONE,
       lineJoin: LineJoin.BEVEL,
       lineMiterLimit: 1.0,
       lineRoundLimit: 1.0,
       lineSortKey: 1.0,
+      lineWidthUnit: LineWidthUnit.PIXELS,
       lineZOffset: 1.0,
       lineBlur: 1.0,
       lineBorderColor: Colors.red.value,
@@ -48,6 +50,8 @@ void main() {
       linePattern: "abc",
       lineTranslate: [0.0, 1.0],
       lineTranslateAnchor: LineTranslateAnchor.MAP,
+      lineTrimColor: Colors.red.value,
+      lineTrimFadeRange: [0.0, 1.0],
       lineTrimOffset: [0.0, 1.0],
       lineWidth: 1.0,
     ));
@@ -58,10 +62,13 @@ void main() {
     expect(layer.slot, LayerSlot.BOTTOM);
     expect(layer.visibility, Visibility.NONE);
     expect(layer.lineCap, LineCap.BUTT);
+    expect(layer.lineCrossSlope, 1.0);
+    expect(layer.lineElevationReference, LineElevationReference.NONE);
     expect(layer.lineJoin, LineJoin.BEVEL);
     expect(layer.lineMiterLimit, 1.0);
     expect(layer.lineRoundLimit, 1.0);
     expect(layer.lineSortKey, 1.0);
+    expect(layer.lineWidthUnit, LineWidthUnit.PIXELS);
     expect(layer.lineZOffset, 1.0);
     expect(layer.lineBlur, 1.0);
     expect(layer.lineBorderColor, Colors.red.value);
@@ -78,6 +85,8 @@ void main() {
     expect(layer.linePattern, "abc");
     expect(layer.lineTranslate, [0.0, 1.0]);
     expect(layer.lineTranslateAnchor, LineTranslateAnchor.MAP);
+    expect(layer.lineTrimColor, Colors.red.value);
+    expect(layer.lineTrimFadeRange, [0.0, 1.0]);
     expect(layer.lineTrimOffset, [0.0, 1.0]);
     expect(layer.lineWidth, 1.0);
   });
@@ -105,10 +114,13 @@ void main() {
       maxZoom: 20.0,
       slot: LayerSlot.BOTTOM,
       lineCapExpression: ['string', 'butt'],
+      lineCrossSlopeExpression: ['number', 1.0],
+      lineElevationReferenceExpression: ['string', 'none'],
       lineJoinExpression: ['string', 'bevel'],
       lineMiterLimitExpression: ['number', 1.0],
       lineRoundLimitExpression: ['number', 1.0],
       lineSortKeyExpression: ['number', 1.0],
+      lineWidthUnitExpression: ['string', 'pixels'],
       lineZOffsetExpression: ['number', 1.0],
       lineBlurExpression: ['number', 1.0],
       lineBorderColorExpression: ['rgba', 255, 0, 0, 1],
@@ -131,6 +143,11 @@ void main() {
         [0.0, 1.0]
       ],
       lineTranslateAnchorExpression: ['string', 'map'],
+      lineTrimColorExpression: ['rgba', 255, 0, 0, 1],
+      lineTrimFadeRangeExpression: [
+        'literal',
+        [0.0, 1.0]
+      ],
       lineTrimOffsetExpression: [
         'literal',
         [0.0, 1.0]
@@ -149,10 +166,13 @@ void main() {
       "Feature"
     ]);
     expect(layer.lineCap, LineCap.BUTT);
+    expect(layer.lineCrossSlope, 1.0);
+    expect(layer.lineElevationReference, LineElevationReference.NONE);
     expect(layer.lineJoin, LineJoin.BEVEL);
     expect(layer.lineMiterLimit, 1.0);
     expect(layer.lineRoundLimit, 1.0);
     expect(layer.lineSortKey, 1.0);
+    expect(layer.lineWidthUnit, LineWidthUnit.PIXELS);
     expect(layer.lineZOffset, 1.0);
     expect(layer.lineBlur, 1.0);
     expect(layer.lineBorderColorExpression, ['rgba', 255, 0, 0, 1]);
@@ -169,6 +189,8 @@ void main() {
     expect(layer.linePatternExpression, ['image', "abc"]);
     expect(layer.lineTranslate, [0.0, 1.0]);
     expect(layer.lineTranslateAnchor, LineTranslateAnchor.MAP);
+    expect(layer.lineTrimColorExpression, ['rgba', 255, 0, 0, 1]);
+    expect(layer.lineTrimFadeRange, [0.0, 1.0]);
     expect(layer.lineTrimOffset, [0.0, 1.0]);
     expect(layer.lineWidth, 1.0);
   });

@@ -1,5 +1,6 @@
 package com.mapbox.maps.mapbox_maps
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import com.google.gson.Gson
@@ -9,10 +10,10 @@ import com.mapbox.bindgen.Value
 import com.mapbox.common.TileRegionError
 import com.mapbox.geojson.*
 import com.mapbox.maps.EdgeInsets
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.StylePackError
 import com.mapbox.maps.applyDefaultParams
 import com.mapbox.maps.debugoptions.MapViewDebugOptions
-import com.mapbox.maps.extension.style.expressions.dsl.generated.min
 import com.mapbox.maps.extension.style.layers.properties.generated.ProjectionName
 import com.mapbox.maps.extension.style.light.LightPosition
 import com.mapbox.maps.extension.style.light.generated.ambientLight
@@ -20,6 +21,8 @@ import com.mapbox.maps.extension.style.light.generated.directionalLight
 import com.mapbox.maps.extension.style.light.generated.flatLight
 import com.mapbox.maps.extension.style.projection.generated.Projection
 import com.mapbox.maps.extension.style.types.StyleTransition
+import com.mapbox.maps.interactions.FeatureState
+import com.mapbox.maps.interactions.TypedFeaturesetDescriptor
 import com.mapbox.maps.logE
 import com.mapbox.maps.mapbox_maps.pigeons.*
 import org.json.JSONArray
@@ -27,6 +30,19 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 
 // FLT to Android
+
+fun PerformanceStatisticsOptions.toPerformanceStatisticsOptions(): com.mapbox.maps.PerformanceStatisticsOptions {
+  return com.mapbox.maps.PerformanceStatisticsOptions.Builder()
+    .samplerOptions(samplerOptions.map { it.toPerformanceSamplerOptions() })
+    .samplingDurationMillis(samplingDurationMillis).build()
+}
+
+fun PerformanceSamplerOptions.toPerformanceSamplerOptions(): com.mapbox.maps.PerformanceSamplerOptions {
+  return when (this) {
+    PerformanceSamplerOptions.CUMULATIVE -> com.mapbox.maps.PerformanceSamplerOptions.CUMULATIVE_RENDERING_STATS
+    PerformanceSamplerOptions.PER_FRAME -> com.mapbox.maps.PerformanceSamplerOptions.PER_FRAME_RENDERING_STATS
+  }
+}
 
 fun _MapWidgetDebugOptions.toMapViewDebugOptions(): MapViewDebugOptions {
   return when (this) {
@@ -235,7 +251,7 @@ fun SourceQueryOptions.toSourceQueryOptions(): com.mapbox.maps.SourceQueryOption
   return com.mapbox.maps.SourceQueryOptions(sourceLayerIds, filter.toValue())
 }
 
-fun RenderedQueryGeometry.toRenderedQueryGeometry(context: Context): com.mapbox.maps.RenderedQueryGeometry {
+fun _RenderedQueryGeometry.toRenderedQueryGeometry(context: Context): com.mapbox.maps.RenderedQueryGeometry {
   return when (type) {
     Type.SCREEN_BOX -> com.mapbox.maps.RenderedQueryGeometry.valueOf(
       Gson().fromJson(
@@ -262,6 +278,50 @@ fun RenderedQueryGeometry.toRenderedQueryGeometry(context: Context): com.mapbox.
 
 fun RenderedQueryOptions.toRenderedQueryOptions(): com.mapbox.maps.RenderedQueryOptions {
   return com.mapbox.maps.RenderedQueryOptions(layerIds, filter?.toValue())
+}
+
+fun FeaturesetFeatureId.toFeaturesetFeatureId(): com.mapbox.maps.FeaturesetFeatureId {
+  return com.mapbox.maps.FeaturesetFeatureId(id, namespace)
+}
+
+@OptIn(MapboxExperimental::class)
+fun FeaturesetDescriptor.toTypedFeaturesetDescriptor(): TypedFeaturesetDescriptor<FeatureState, com.mapbox.maps.interactions.FeaturesetFeature<FeatureState>>? {
+  featuresetId?.let {
+    return TypedFeaturesetDescriptor.Featureset(
+      featuresetId, importId
+    )
+  } ?: layerId?.let {
+    return TypedFeaturesetDescriptor.Layer(
+      layerId
+    )
+  }
+  return null
+}
+
+@OptIn(MapboxExperimental::class)
+fun Map<String, Any?>.toFeatureState(): com.mapbox.maps.interactions.FeatureState {
+  val map = this
+  return FeatureState {
+    for ((key, value) in map) {
+      value?.let {
+        when (value) {
+          is String -> {
+            addStringState(key, value)
+          }
+          is Long -> {
+            addLongState(key, value)
+          }
+          is Double -> {
+            addDoubleState(key, value)
+          }
+          is Boolean -> {
+            addBooleanState(key, value)
+          }
+          else -> throw (RuntimeException("Unsupported (key, value): ($key, $value)"))
+        }
+      }
+    }
+  }
 }
 
 fun MapDebugOptions.toMapDebugOptions(): com.mapbox.maps.MapDebugOptions {
@@ -380,6 +440,44 @@ fun CameraBoundsOptions.toCameraBoundsOptions(): com.mapbox.maps.CameraBoundsOpt
     .minZoom(minZoom)
     .build()
 
+fun Geometry.toMap(): Map<String?, Any?> {
+  return when (this) {
+    is Point -> mapOf(
+      "type" to "Point",
+      "coordinates" to listOf(this.longitude(), this.latitude())
+    )
+    is LineString -> mapOf(
+      "type" to "LineString",
+      "coordinates" to this.coordinates().map { listOf(it.longitude(), it.latitude()) }
+    )
+    is Polygon -> mapOf(
+      "type" to "Polygon",
+      "coordinates" to this.coordinates().map { ring ->
+        ring.map { listOf(it.longitude(), it.latitude()) }
+      }
+    )
+    is MultiPoint -> mapOf(
+      "type" to "MultiPoint",
+      "coordinates" to this.coordinates().map { listOf(it.longitude(), it.latitude()) }
+    )
+    is MultiLineString -> mapOf(
+      "type" to "MultiLineString",
+      "coordinates" to this.coordinates().map { line ->
+        line.map { listOf(it.longitude(), it.latitude()) }
+      }
+    )
+    is MultiPolygon -> mapOf(
+      "type" to "MultiPolygon",
+      "coordinates" to this.coordinates().map { polygon ->
+        polygon.map { ring ->
+          ring.map { listOf(it.longitude(), it.latitude()) }
+        }
+      }
+    )
+    else -> throw IllegalArgumentException("Unsupported geometry type")
+  }
+}
+
 fun Map<String?, Any?>.toGeometry(): Geometry {
   when {
     this["type"] == "Point" -> {
@@ -419,6 +517,43 @@ fun Number.toDevicePixels(context: Context): Float {
 }
 
 // Android to FLT
+
+fun com.mapbox.maps.PerformanceStatistics.toPerformanceStatistics(): PerformanceStatistics {
+  return PerformanceStatistics(
+    collectionDurationMillis = collectionDurationMillis,
+    mapRenderDurationStatistics = mapRenderDurationStatistics.toDurationStatistics(),
+    cumulativeStatistics = cumulativeStatistics?.toCumulativeRenderingStatistics(),
+    perFrameStatistics = perFrameStatistics?.toPerFrameRenderingStatistics()
+  )
+}
+
+fun com.mapbox.maps.DurationStatistics.toDurationStatistics(): DurationStatistics {
+  return DurationStatistics(maxMillis = maxMillis, medianMillis = medianMillis)
+}
+
+fun com.mapbox.maps.CumulativeRenderingStatistics.toCumulativeRenderingStatistics(): CumulativeRenderingStatistics {
+  return CumulativeRenderingStatistics(
+    drawCalls = drawCalls,
+    textureBytes = textureBytes,
+    vertexBytes = vertexBytes,
+    graphicsPrograms = graphicsPrograms,
+    graphicsProgramsCreationTimeMillis = graphicsProgramsCreationTimeMillis,
+    fboSwitchCount = fboSwitchCount
+  )
+}
+
+fun com.mapbox.maps.PerFrameRenderingStatistics.toPerFrameRenderingStatistics(): PerFrameRenderingStatistics {
+  return PerFrameRenderingStatistics(
+    topRenderGroups = topRenderGroups.map { it.toGroupPerformanceStatistics() },
+    topRenderLayers = topRenderLayers.map { it.toGroupPerformanceStatistics() },
+    shadowMapDurationStatistics = shadowMapDurationStatistics.toDurationStatistics(),
+    uploadDurationStatistics = uploadDurationStatistics.toDurationStatistics()
+  )
+}
+
+fun com.mapbox.maps.GroupPerformanceStatistics.toGroupPerformanceStatistics(): GroupPerformanceStatistics {
+  return GroupPerformanceStatistics(durationMillis = durationMillis, name = name)
+}
 
 fun MapViewDebugOptions.toFLTDebugOptions(): _MapWidgetDebugOptions? {
   return when (this) {
@@ -463,7 +598,7 @@ fun com.mapbox.maps.plugin.ModelScaleMode.toFLTModelScaleMode(): ModelScaleMode 
   }
 }
 fun com.mapbox.maps.StylePropertyValue.toFLTStylePropertyValue(): StylePropertyValue {
-  return StylePropertyValue(value.toJson(), StylePropertyValueKind.values()[kind.ordinal])
+  return StylePropertyValue(value.contents, StylePropertyValueKind.values()[kind.ordinal])
 }
 
 fun ProjectionName.toFLTProjectionName(): StyleProjectionName {
@@ -503,6 +638,35 @@ fun com.mapbox.maps.QueriedFeature.toFLTQueriedFeature(): QueriedFeature {
 
 fun com.mapbox.maps.QueriedRenderedFeature.toFLTQueriedRenderedFeature(): QueriedRenderedFeature {
   return QueriedRenderedFeature(queriedFeature.toFLTQueriedFeature(), layers)
+}
+
+fun com.mapbox.maps.FeaturesetFeatureId.toFLTFeaturesetFeatureId(): FeaturesetFeatureId {
+  return FeaturesetFeatureId(featureId, featureNamespace)
+}
+
+fun com.mapbox.maps.FeaturesetDescriptor.toFLTFeaturesetDescriptor(): FeaturesetDescriptor {
+  return FeaturesetDescriptor(featuresetId, importId, layerId)
+}
+
+@SuppressLint("RestrictedApi")
+@OptIn(MapboxExperimental::class)
+fun com.mapbox.maps.interactions.FeaturesetFeature<FeatureState>.toFLTFeaturesetFeature(): FeaturesetFeature {
+  return FeaturesetFeature(
+    id?.toFLTFeaturesetFeatureId(),
+    descriptor.toFeaturesetDescriptor().toFLTFeaturesetDescriptor(),
+    geometry.toMap(),
+    properties.toFilteredMap(),
+    JSONObject(state.asJsonString()).toFilteredMap()
+  )
+}
+
+@SuppressLint("RestrictedApi")
+fun com.mapbox.maps.InteractionContext.toFLTMapContentGestureContext(context: Context): MapContentGestureContext {
+  return MapContentGestureContext(
+    screenCoordinate.toFLTScreenCoordinate(context),
+    coordinateInfo.coordinate,
+    GestureState.ENDED
+  )
 }
 
 fun com.mapbox.maps.QueriedSourceFeature.toFLTQueriedSourceFeature(): QueriedSourceFeature {
@@ -593,6 +757,13 @@ fun JSONObject.toMap(): Map<String?, Any?> = keys().asSequence().associateWith {
     JSONObject.NULL -> null
     else -> value
   }
+}
+
+@OptIn(MapboxExperimental::class)
+fun JSONObject.toFilteredMap(): Map<String, Any?> {
+  return this.toMap()
+    .filterKeys { it != null } // Filter out null keys
+    .mapKeys { it.key!! }
 }
 
 fun Number.toLogicalPixels(context: Context): Double {
@@ -696,6 +867,23 @@ fun com.mapbox.common.TileRegionEstimateProgress.toFLTTileRegionEstimateProgress
   )
 }
 
+fun _TileStoreOptionsKey.toTileStoreOptionsKey(): String {
+  return when (this) {
+    _TileStoreOptionsKey.DISK_QUOTA -> com.mapbox.common.TileStoreOptions.DISK_QUOTA
+    _TileStoreOptionsKey.MAPBOX_API_URL -> com.mapbox.common.TileStoreOptions.MAPBOX_APIURL
+    _TileStoreOptionsKey.TILE_URL_TEMPLATE -> com.mapbox.common.TileStoreOptions.TILE_URLTEMPLATE
+  }
+}
+
+fun TileDataDomain.toTileDataDomain(): com.mapbox.common.TileDataDomain {
+  return when (this) {
+    TileDataDomain.MAPS -> com.mapbox.common.TileDataDomain.MAPS
+    TileDataDomain.NAVIGATION -> com.mapbox.common.TileDataDomain.NAVIGATION
+    TileDataDomain.SEARCH -> com.mapbox.common.TileDataDomain.SEARCH
+    TileDataDomain.ADAS -> com.mapbox.common.TileDataDomain.ADAS
+  }
+}
+
 fun Expected<String, None>.handleResult(callback: (Result<Unit>) -> Unit) {
   if (this.isError) {
     callback(Result.failure(Throwable(this.error)))
@@ -790,6 +978,7 @@ fun Any.toValue(): Value {
   } else if (this is HashMap<*, *>) {
     val valueMap = this
       .mapKeys { it.key as? String }
+      .filterValues { it != null }
       .mapValues { it.value.toValue() }
     Value.valueOf(kotlin.collections.HashMap(valueMap))
   } else {

@@ -1,3 +1,195 @@
+### main
+
+> [!IMPORTANT]
+> [Android] When a method returns `StylePropertyValue` the property values will now be typed rather than a string.
+
+* In this release we fixed a bug in our Android conversion code where the property values in `StylePropertyValue` were being returned as strings rather than their actual type. This fix will cause a behavioral change in the return value of the following methods on Android:
+  * `getStyleImportConfigProperties`, `getStyleImportConfigProperty`, `getStyleLayerProperty`, `getStyleSourceProperty`, `getStyleTerrainProperty`, `getStyleLightProperty`.
+* Expose new methods for working with style imports: `addStyleImportFromJSON`, `addStyleImportFromURI`, `updateStyleImportWithJSON`, `updateStyleImportWithURI`, and `moveStyleImport`.
+* Update geometry conversions on Android to use Longitude, Latitude instead of Latitude, Longitude order. This follows the order used by the GeoJSON Specification and the Turf library.
+
+### 2.8.0-rc.1
+
+* [Android] Fix color alpha value conversion.
+
+### 2.8.0-beta.1
+
+* Introduce experimental `MapboxMap.startPerformanceStatisticsCollection` / `MapboxMap.stopPerformanceStatisticsCollection` APIs allowing to start / stop collecting map rendering performance statistics.
+* Update Maps SDK to 11.12.0-beta.1
+
+### 2.7.0
+
+* Update Maps SDK to 11.11.0
+* Introduce a `setCustomHttpHeader` method to allow the plugin to modify HTTP headers dynamically.
+* Experimental `StandardBuildingState` has been removed. Use `StandardBuildingsState` instead.
+* `top-image`, `bearing-image`, and `shadow-image` properties on `LocationIndicatorLayer` are now paint properties instead of layout properties.
+* Introduce `onZoomListener` to `MapWidget` to allowing listening to zoom events resulting from user gestures: pinching, double-tapping, or quick zooming. The event returns `MapContentGestureContext`, which includes `touchPosition` (the location of the gesture on the screen), `point` (the geographical coordinates of the gesture), and `gestureState` (the state of the gesture). See `gestures_example.dart` for implementation guidance.
+* Expose `SymbolLayer.iconSizeScaleRange`, `SymbolLayer.iconSizeScaleRangeExpression`, `SymbolLayer.textSizeScaleRange`, `SymbolLayer.textSizeScaleRangeExpression`, `LineLayer.lineCrossSlope`, `LineLayer.lineElevationReference`, `LineLayer.lineWidthUnit`, `FillLayer.fillElevationReference`.
+* Expose `PointAnnotationManager.setIconSizeScaleRange()`, `PointAnnotationManager.getIconSizeScaleRange()`, `PointAnnotationManager.setTextSizeScaleRange()`, `PointAnnotationManager.getTextSizeScaleRange()` , `PolygonAnnotationManager.setFillElevationReference()`, `PolygonAnnotationManager.getFillElevationReference()`, `PolylineAnnotationManager.setLineCrossSlope()`, `PolylineAnnotationManager.getLineCrossSlope()`, `PolylineAnnotationManager.setLineElevationReference()`, `PolylineAnnotationManager.getLineElevationReference()`, `PolylineAnnotationManager.setLineWidthUnit()`, `PolylineAnnotationManager.getLineWidthUnit()` as experimental.
+* Mark `ClipLayer.clipLayerScope` and `ClipLayer.clipLayerTypes` as stable
+* Mark `BackgroundLayer.backgroundPitchAlignment` as experimental
+* [Android] Fix rare NPE upon native view disposal.
+
+### 2.6.0
+
+> [!IMPORTANT]
+> The iOS minimum deployment target is now iOS 14.0.
+
+* Update Maps SDK to 11.10.0
+* Align tap propagation behavior on Android and iOS.
+* Introduce the experimental Interactions API, a toolset that allows you to handle interactions on both layers and basemap features for styles. This API introduces a new concept called `Featureset`, which allows Evolving Basemap styles, such as Standard, to export an abstract set of features, such as POI, buildings, and place labels, regardless of which layers they are rendered on. An `Interaction` can then be targeted to these features, modifying their state when interacted with. For example, you can add a `TapInteraction` to your map which targets the `buildings` `Featureset`. When a user taps on a building, the building will be highlighted and its color will change to blue.
+
+```dart
+var tapInteraction = TapInteraction(StandardBuildings(),
+    (_, feature) {
+  mapboxMap.setFeatureStateForFeaturesetFeature(feature, StandardBuildingsState(highlight: true));
+  log("Building group: ${feature.group}");
+});
+mapboxMap.addInteraction(tapInteraction);
+```
+Specific changes:
+  * Introduce the experimental `MapboxMap.addInteraction` method, which allows you to add interactions to the map.
+  * Introduce the experimental `MapboxMap.removeInteraction` method, which allows you to remove interactions from the map using an identifier `mapboxMap.removeInteraction("tap_interaction_poi")`
+  * Introduce the ability to add `TapInteraction` and `LongTapInteraction` targeting the map itself.
+  * Introduce `TapInteraction` and `LongTapInteraction`, which allow you to add tap and longTap interactions to the map.
+  * Introduce `FeaturesetDescriptor` -- and convenience descriptors for `StandardBuildings`, `StandardPOIs`, and `StandardPlaceLabels` -- which allow you to describe the featureset you want `Interactions` to target.
+  * Introduce low-level methods for creating and manipulating interactive features: `queryRenderedFeatures`, `querySourceFeatures`, `setFeatureState`, `getFeatureState`, `removeFeatureState`, `resetFeatureState`
+* For more guidance with using these new features see `interactive_features_example.dart`.
+* Add support for Swift Package Manager.
+
+### 2.5.2
+
+* Bump Maps SDK to 11.9.2
+
+### 2.5.1
+
+* Bump Maps SDK to 11.9.1
+
+### 2.5.0
+
+* Mark `ClipLayer` as stable.
+* Updated our generated code to align with iOS and Android platforms. Specifically, the changes:
+  * Update experimental `symbolElevationReference` property on `SymbolLayer`.
+  * Introduce `backgroundPitchAlignment` property on `BackgroundLayer`.
+  * Introduce experimental `fillZOffset` property on `FillLayer`.
+  * Introduce experimental `fillExtrusionBaseAlignment` and `fillExtrusionHeightAlignment` properties on `FillExtrusionLayer`.
+  * Mark get and set `ZOffset` methods on `PolygonAnnotationManager`, `PolylineAnnotationManager`, and `PointAnnotationManager` as experimental.
+  * Mark get and set `symbolElevationReference` methods on `PointAnnotationManager` as experimental.
+  * Mark get and set line trim methods on `PolylineAnnotationManager` as experimental.
+  * Add a property `emphasisCircleGlowRange` to `LocationIndicatorLayer` to control the glow effect of the emphasis circle – from the solid start to the fully transparent end.
+  * Add experimental `ZOffset` properties to `PolylineAnnotationMessenger`, `PolygonAnnotationMessenger`, and `PointAnnotationMessenger`.
+  * Introduce `FillExtrusionBaseAlignment` and `FillExtrusionHeightAlignment`, and `BackgroundPitchAlignment` enums.
+* Added viewport support to `MapWidget`. Control the camera’s initial position and behavior by specifying a ViewportState subclass in the viewport parameter. This allows for centering on specific locations, following the user’s position, or showing an overview of a geometry. If no viewport is provided, the map uses its default camera settings.
+  ```dart
+  MapWidget(
+    viewport: CameraViewportState(
+      center: Point(coordinates: Position(-117.918976, 33.812092)),
+      zoom: 15.0,
+    ),
+  );
+  ```
+
+### 2.4.1
+
+* Fix annotation click listeners not working.
+
+### 2.4.0
+
+> [!IMPORTANT]
+> Configuring Mapbox's secret token is no longer required when installing our SDKs.
+
+* Update Maps SDK to 11.8.0
+* Updated the minimum required Flutter SDK to version 3.22.3 and Dart to version 3.4.4. With the fix for Virtual Display hosting mode on Android in Flutter 3.22, we’ve changed the default map view hosting mode to Virtual Display composition. This update should eliminate the brief visibility of the map after it has been dismissed.
+* Introduce experimental property `MapboxMap.styleGlyphURL`. Use this property to apply custom fonts to the map at runtime, without modifying the base style.
+* Expose current map's camera state on `CameraChanged` event. [#704](https://github.com/mapbox/mapbox-maps-flutter/pull/704)
+
+You can now observe the map's camera updates with `onCameraChangeListener`
+
+```dart
+onCameraChangeListener(CameraChangedEventData data) {
+  print("CameraChangedEventData: timestamp: ${data.timestamp}, cameraState: ${data.cameraState}");
+}
+```
+* Print to console native Maps SDK logs in debug configuration. [#710](https://github.com/mapbox/mapbox-maps-flutter/pull/710)
+Logs are proxied only in debug configuration and can be disabled completely by passing environment flag `MAPBOX_LOG_DEBUG` with false value.
+* Fix rare crash in `Snapshotter`. The crash could happen when creating/destroying multiple instances of `Snapshotter` in succession. [#728](https://github.com/mapbox/mapbox-maps-flutter/pull/728)
+* Fix a crash that occurs when the widget state is updated before the platform view is created. [#724](https://github.com/mapbox/mapbox-maps-flutter/pull/724)
+* Fix a crash in Snapshotter when GlyphsRasterizationMode is specified in MapSnapshotOptions. [#738](https://github.com/mapbox/mapbox-maps-flutter/pull/738)
+* Remove `ProxyBinaryMessenger`, instead setup channel with a `messageChannelSuffix`. [#715](https://github.com/mapbox/mapbox-maps-flutter/pull/715).
+
+# 2.3.0
+
+* Deprecate untyped default constructor of `RenderedQueryGeometry` with typed constructors: `RenderedQueryGeometry.fromList()/fromScreenBox()/fromScreenCoordinate()`.
+
+This change improves type safety and clarity in the code. By using specific constructors, you can ensure that the `RenderedQueryGeometry` is created with the correct type of data, reducing the risk of runtime errors and making the code easier to understand and maintain.
+
+**Example:**
+
+*Before:*
+```dart
+// Using the untyped default constructor
+final geometry = RenderedQueryGeometry(type: Type.SCREEN_COORDINATE, value jsonEncode(screenCoordinate.encode()));
+```
+
+*After:*
+```dart
+// Using a typed constructor
+final geometry = RenderedQueryGeometry.fromScreenCoordinate(screenCoordinate);
+```
+* Expose API to clear map data, and to set options to `TileStore`.
+
+You can now clear temporary map data from the data path defined in the given resource options, which is useful when you want reduce the disk usage or in case the disk cache contains invalid data.
+```dart
+await MapboxMapsOptions.clearData();
+```
+And you can now set additional options to a `TileStore`, for example, a maximum amount of bytes TileStore can use to store files., base URL to use for requests to the Mapbox API, or URL template for making tile requests.
+```dart
+// Set the disk quota to zero, so that tile regions are fully evicted
+// when removed.
+// This removes the tiles from the predictive cache.
+tileStore.setDiskQuota(0);
+```
+* Add support for partial GeoJSON updates.
+
+Instead of setting a whole new GeoJSON object anew every time a single feature has changed, now you can apply more granular, partial GeoJSON updates.
+If your features have associated identifiers - you can add, update, and remove them on individual basis in your ``GeoJSONSource``. This is especially beneficial for ``GeoJSONSource``s hosting a large amount of features - in this case adding a feature can be up to 4x faster with the partial GeoJSON update API.
+
+```dart
+mapboxMap.style.addGeoJSONSourceFeatures(sourceId, dataId, features)
+mapboxMap.style.updateGeoJSONSourceFeatures(sourceId, dataId, features)
+mapboxMap.style.removeGeoJSONSourceFeatures(sourceId, dataId, featureIds)
+```
+* Fix `StyleManager.getLayer()` failing for `ModelLayer`, `RasterParticleLayer` and `SlotLayer`.
+* Expose data-driven properties on annotation managers. Now it's possible to set data-driven properties globally on annotation manager and specify per-annotation overrides.
+Previously user had to specify those properties on each annotation and couldn't specify them globally.
+
+In this case each even annotation will have random color, but others will use the global default specified in the annotation manager.
+```dart
+final circleAnnotationManager = await mapboxMap.annotations.createCircleAnnotationManager();
+var annotations = <CircleAnnotationOptions>[];
+for (var i = 0; i < 2000; i++){
+  var annotation = CircleAnnotationOptions(
+    geometry: createRandomPoint(),
+    circleColor: (i % 2 == 0) ? createRandomColor() : null,
+    );
+
+  annotations.add(annotation);
+}
+circleAnnotationManager.setCircleColor(Colors.blue.value);
+```
+* Expose `autoMaxZoom` property for `GeoJsonSource` to fix rendering issues with `FillExtrusionLayer` in some cases.
+* Expose experimental `ClipLayer` to remove 3D data (fill extrusions, landmarks, trees) and symbols.
+* Deprecate `SlotLayer.sourceId` and `SlotLayer.sourceLayer` as they have no effect in this layer.
+* Expose experimental `SymbolLayer.symbolElevationReference` and `SymbolLayer.symbolZOffset`.
+* Add missing `@experimental` annotations to `Layer`'s `Expression` properties.
+* Remove experimental `model-front-cutoff` property from `ModelLayer`.
+* Expose experimental `lineTrimColor` and `lineTrimFadeRange` on `LineLayer` which allow to set custom color for trimmed line and fade effect for trim.
+* Add experimental `FillExtrusionLayer.fillExtrusionLineWidth` that can switch fill extrusion rendering into wall rendering mode. Use this property to render the feature with the given width over the outlines of the geometry.
+* Add experimental `MapboxMap.setSnapshotLegacyMode()` to help avoiding `MapboxMap.snapshot()` native crash on some Samsung devices running Android 14. `MapboxMap.setSnapshotLegacyMode()` has no effect on iOS.
+* Fix build errors when using Flutter SDK 3.24.
+* Add `GestureState` to `MapContentGestureContext` to indicate whether gesture has been started, its touches have changed or it has ended.
+* Bump Maps SDK to 11.7.0.
+
 ### 2.2.0
 
 * Bump Maps SDK to 11.6.0

@@ -1,13 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:mapbox_maps_example/empty_map_widget.dart' as app;
+import '../empty_map_widget.dart' as app;
 
 import '../utils/list_close_to_matcher.dart';
 
@@ -169,10 +168,10 @@ void main() {
     style.addStyleLayer(layer, null);
     await style.setStyleLayerProperties('custom', json.encode(properties));
     var styleLayerProperties = await style.getStyleLayerProperties('custom');
-    var formatedProperties =
+    var formattedProperties =
         json.decode(styleLayerProperties) as Map<String, dynamic>;
-    expect(formatedProperties['paint']['circle-radius'], 10);
-    expect(formatedProperties['paint']['circle-color'],
+    expect(formattedProperties['paint']['circle-radius'], 10);
+    expect(formattedProperties['paint']['circle-color'],
         ['rgba', 255, 255, 255, 1]);
   });
 
@@ -221,6 +220,100 @@ void main() {
     expect(styleSourceProperties['type'], 'geojson');
     expect(styleSourceProperties['attribution'],
         '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\" title=\"Mapbox\" aria-label=\"Mapbox\" role=\"listitem\">© Mapbox</a>');
+  });
+
+  testWidgets('addAndRemoveGeoJSONSourceFeatures', (WidgetTester tester) async {
+    final mapFuture = app.main();
+    await tester.pumpAndSettle();
+    final mapboxMap = await mapFuture;
+    var data = await rootBundle
+        .loadString('assets/from_crema_to_council_crest.geojson');
+    var feature = Feature(
+        id: "addedFeature",
+        geometry: Point(coordinates: Position(1, 1)),
+        properties: {"test": "data"});
+
+    // Reset map events
+    app.events.resetOnSourceDataLoaded();
+    app.events.resetOnMapIdle();
+
+    // Add GeoJSONSourceFeature
+    await mapboxMap.style.addSource(GeoJsonSource(id: "line", data: data));
+    await mapboxMap.style.addGeoJSONSourceFeatures("line", "dataID", [feature]);
+    await mapboxMap.style
+        .addLayer(CircleLayer(id: "circle_layer", sourceId: "line"));
+
+    // Wait for map and source to finish
+    await app.events.onSourceDataLoaded.future;
+    await app.events.onMapIdle.future;
+
+    // Test dataId is returned
+    expect(app.events.sourceDataIDs.first, "dataID");
+
+    // Test added Features
+    var returnedSourceFeatures = await mapboxMap.querySourceFeatures(
+        'line', SourceQueryOptions(filter: ''));
+    expect(returnedSourceFeatures.length, 1);
+    expect(returnedSourceFeatures.first?.queriedFeature.feature['id'],
+        "addedFeature");
+    expect(returnedSourceFeatures.first?.queriedFeature.feature['properties'],
+        {"test": "data"});
+
+    // Reset map events
+    app.events.resetOnSourceDataLoaded();
+    app.events.resetOnMapIdle();
+
+    await mapboxMap.style
+        .removeGeoJSONSourceFeatures("line", "dataID", ["addedFeature"]);
+
+    // Wait for map and source to finish
+    await app.events.onSourceDataLoaded.future;
+    await app.events.onMapIdle.future;
+
+    returnedSourceFeatures = await mapboxMap.querySourceFeatures(
+        'line', SourceQueryOptions(filter: ''));
+    expect(returnedSourceFeatures.length, 0);
+  });
+
+  testWidgets('updateGeoJSONSourceFeatures', (WidgetTester tester) async {
+    final mapFuture = app.main();
+    await tester.pumpAndSettle();
+    final mapboxMap = await mapFuture;
+    var data = await rootBundle
+        .loadString('assets/from_crema_to_council_crest.geojson');
+    var feature = Feature(
+        id: "addedFeature",
+        geometry: Point(coordinates: Position(1, 1)),
+        properties: {"test": "data"});
+
+    // Reset map events
+    app.events.resetOnSourceDataLoaded();
+    app.events.resetOnMapIdle();
+
+    // Add and update GeoJSONSourceFeature
+    await mapboxMap.style.addSource(GeoJsonSource(id: "line", data: data));
+    await mapboxMap.style.addGeoJSONSourceFeatures("line", "dataID", [feature]);
+    await mapboxMap.style
+        .addLayer(CircleLayer(id: "circle_layer", sourceId: "line"));
+    feature.properties = {"test": "newData"};
+    await mapboxMap.style
+        .updateGeoJSONSourceFeatures("line", "dataID", [feature]);
+
+    // Wait for map and source to finish
+    await app.events.onSourceDataLoaded.future;
+    await app.events.onMapIdle.future;
+
+    // Test dataId is returned
+    expect(app.events.sourceDataIDs.first, "dataID");
+
+    // Test query
+    var returnedSourceFeatures = await mapboxMap.querySourceFeatures(
+        'line', SourceQueryOptions(filter: ''));
+    expect(returnedSourceFeatures.length, 1);
+    expect(returnedSourceFeatures.first?.queriedFeature.feature['id'],
+        "addedFeature");
+    expect(returnedSourceFeatures.first?.queriedFeature.feature['properties'],
+        {"test": "newData"});
   });
 
   testWidgets('getStyleDefaultCamera', (WidgetTester tester) async {
@@ -485,6 +578,192 @@ void main() {
     );
     var projection = await mapboxMap.style.getProjection();
     expect(projection?.name, StyleProjectionName.mercator);
+  });
+
+  testWidgets('StyleImportJSON', (WidgetTester tester) async {
+    final mapFuture = app.main();
+    await tester.pumpAndSettle();
+    final mapboxMap = await mapFuture;
+    var style = mapboxMap.style;
+
+    var configs = {
+      "config1": true,
+      "config2": "string",
+      "config3": 1,
+    };
+
+    var importPosition = ImportPosition(below: "basemap");
+
+    var styleImportJSON =
+        await rootBundle.loadString('assets/fragment_realestate_NY.json');
+    await style.addStyleImportFromJSON('style-import', styleImportJSON,
+        config: configs, importPosition: importPosition);
+    var styleImports = await style.getStyleImports();
+
+    // As it is below the basemap, it should be the first one
+    expect(styleImports.first?.id, "style-import");
+    expect(styleImports.first?.type, "import");
+    expect(styleImports[1]?.id, "basemap");
+    expect(styleImports[1]?.type, "import");
+    expect(styleImports.length, 2);
+
+    await mapboxMap.style
+        .getStyleImportConfigProperties("style-import")
+        .then((value) {
+      expect(value["config1"]?.value, configs["config1"]);
+      expect(value["config2"]?.value, configs["config2"]);
+      expect(value["config3"]?.value, configs["config3"]);
+    });
+  });
+
+  testWidgets('StyleImportsURI', (WidgetTester tester) async {
+    final mapFuture = app.main();
+    await tester.pumpAndSettle();
+    final mapboxMap = await mapFuture;
+    var style = mapboxMap.style;
+
+    var configs = {
+      "config1": true,
+      "config2": "string",
+      "config3": 1,
+    };
+
+    var importPosition = ImportPosition(below: "basemap");
+    var styleImportURI = 'mapbox://styles/mapbox/standard-satellite';
+
+    await style.addStyleImportFromURI('style-import-satellite', styleImportURI,
+        config: configs, importPosition: importPosition);
+    var styleImports = await style.getStyleImports();
+
+    // As it is below the basemap, it should be the first one
+    expect(styleImports.first?.id, "style-import-satellite");
+    expect(styleImports.first?.type, "import");
+    expect(styleImports[1]?.id, "basemap");
+    expect(styleImports[1]?.type, "import");
+    expect(styleImports.length, 2);
+
+    await mapboxMap.style
+        .getStyleImportConfigProperties("style-import-satellite")
+        .then((value) {
+      expect(value["config1"]?.value, configs["config1"]);
+      expect(value["config2"]?.value, configs["config2"]);
+      expect(value["config3"]?.value, configs["config3"]);
+    });
+  });
+
+  testWidgets('StyleUpdateJSON', (WidgetTester tester) async {
+    final mapFuture = app.main();
+    await tester.pumpAndSettle();
+    final mapboxMap = await mapFuture;
+    var style = mapboxMap.style;
+
+    var configs = {
+      "config1": true,
+      "config2": "string",
+      "config3": 1,
+    };
+
+    var configs2 = {
+      "config4": false,
+      "config5": "newString",
+      "config6": 1.5,
+    };
+
+    var styleImportURI = 'mapbox://styles/mapbox/standard-satellite';
+    var styleImportJSON =
+        await rootBundle.loadString('assets/fragment_realestate_NY.json');
+    await style.addStyleImportFromURI('style-import', styleImportURI,
+        config: configs);
+    await style.updateStyleImportWithJSON('style-import', styleImportJSON,
+        config: configs2);
+
+    var styleImports = await style.getStyleImports();
+
+    expect(styleImports.length, 2);
+
+    await mapboxMap.style
+        .getStyleImportConfigProperties("style-import")
+        .then((value) {
+      expect(value["config1"]?.value, configs["config1"]);
+      expect(value["config2"]?.value, configs["config2"]);
+      expect(value["config3"]?.value, configs["config3"]);
+      expect(value["config4"]?.value, configs2["config4"]);
+      expect(value["config5"]?.value, configs2["config5"]);
+      expect(value["config6"]?.value, configs2["config6"]);
+    });
+  });
+
+  testWidgets('StyleUpdateJSON', (WidgetTester tester) async {
+    final mapFuture = app.main();
+    await tester.pumpAndSettle();
+    final mapboxMap = await mapFuture;
+    var style = mapboxMap.style;
+
+    var configs = {
+      "config1": true,
+      "config2": "string",
+      "config3": 1,
+    };
+
+    var configs2 = {
+      "config4": false,
+      "config5": "newString",
+      "config6": 1.5,
+    };
+
+    var styleImportURI = 'mapbox://styles/mapbox/standard-satellite';
+    var styleImportJSON =
+        await rootBundle.loadString('assets/fragment_realestate_NY.json');
+    await style.addStyleImportFromJSON('style-import', styleImportJSON,
+        config: configs);
+    await style.updateStyleImportWithURI('style-import', styleImportURI,
+        config: configs2);
+
+    var styleImports = await style.getStyleImports();
+
+    expect(styleImports.length, 2);
+
+    await mapboxMap.style
+        .getStyleImportConfigProperties("style-import")
+        .then((value) {
+      expect(value["config1"]?.value, configs["config1"]);
+      expect(value["config2"]?.value, configs["config2"]);
+      expect(value["config3"]?.value, configs["config3"]);
+      expect(value["config4"]?.value, configs2["config4"]);
+      expect(value["config5"]?.value, configs2["config5"]);
+      expect(value["config6"]?.value, configs2["config6"]);
+    });
+  });
+
+  testWidgets('MoveStyleImport', (WidgetTester tester) async {
+    final mapFuture = app.main();
+    await tester.pumpAndSettle();
+    final mapboxMap = await mapFuture;
+    var style = mapboxMap.style;
+
+    var importPosition = ImportPosition(below: "basemap");
+    var styleImportJSON =
+        await rootBundle.loadString('assets/fragment_realestate_NY.json');
+    await style.addStyleImportFromJSON('style-import', styleImportJSON);
+
+    var styleImports = await style.getStyleImports();
+
+    expect(styleImports.first?.id, "basemap");
+    expect(styleImports.first?.type, "import");
+    expect(styleImports[1]?.id, "style-import");
+    expect(styleImports[1]?.type, "import");
+    expect(styleImports.length, 2);
+
+    // Move the style import to be below the basemap
+    await style.moveStyleImport('style-import', importPosition);
+
+    styleImports = await style.getStyleImports();
+
+    expect(styleImports.first?.id, "style-import");
+    expect(styleImports.first?.type, "import");
+    expect(styleImports[1]?.id, "basemap");
+    expect(styleImports[1]?.type, "import");
+    expect(styleImports.length, 2);
   });
 }
 

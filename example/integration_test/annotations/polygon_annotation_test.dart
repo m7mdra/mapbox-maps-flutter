@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:mapbox_maps_example/empty_map_widget.dart' as app;
+import '../empty_map_widget.dart' as app;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +30,7 @@ void main() {
       fillOpacity: 1.0,
       fillOutlineColor: Colors.red.value,
       fillPattern: "abc",
+      fillZOffset: 1.0,
     );
     final annotation = await manager.create(polygonAnnotationOptions);
     var polygon = annotation.geometry;
@@ -45,6 +46,7 @@ void main() {
     expect(1.0, annotation.fillOpacity);
     expect(Colors.red.value, annotation.fillOutlineColor);
     expect("abc", annotation.fillPattern);
+    expect(1.0, annotation.fillZOffset);
   });
 
   testWidgets('update and delete PolygonAnnotation',
