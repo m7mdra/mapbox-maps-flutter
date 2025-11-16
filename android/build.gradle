@@ -2,14 +2,14 @@ group 'com.mapbox.maps.mapbox_maps'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.7.10'
+    ext.kotlin_version = '2.2.21'
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.1'
+        classpath 'com.android.tools.build:gradle:8.13.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -41,18 +41,18 @@ apply plugin: 'kotlin-android'
 android {
     namespace 'com.mapbox.maps.mapbox_maps'
 
-    compileSdk 34
+    compileSdk 36
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 24
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
     }
 }
 
@@ -65,7 +65,8 @@ if (file("$rootDir/gradle/ktlint.gradle").exists() && file("$rootDir/gradle/lint
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation ("com.mapbox.maps:android:10.13.0"){
+
+    implementation ("com.mapbox.maps:android-ndk27:10.19.0"){
         exclude group: 'com.mapbox.plugin', module: 'maps-lifecycle'
     }
     implementation "androidx.annotation:annotation:1.8.2"
